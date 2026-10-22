@@ -26,6 +26,8 @@ This server is dedicated to training AI models and computational tasks related t
 
 **Data Security:** Do not attempt to access or interfere with other users' data or jobs.
 
+**One GPU at Most:** Each job may request at most 1 GPU (`--gres=gpu:1`). The GPUs are shared, so do not request more.
+
 **Report Issues:** Immediately report any security incidents or vulnerabilities to the server administrator.
 
 **Respect Maintenance Schedules:** Regular maintenance times will be communicated. Backup before the maintenance & Log out during these times to avoid data loss.
@@ -258,20 +260,6 @@ Note: Always confirm job parameters and resource requests as appropriate for you
 ----------------------------------------------------------------------------------------------------------------
 
 
-
-
-
-4. Find the jupyter URL with token from output.txt file
-
-		cat output.txt
-
-
-5. Use jupyter notebook from your local machine as normal, with the computation performed on the server.
-
-
-----------------------------------------------------------------------------------------------------------------
-
-
 ### Worked Examples
 
 Complete example scripts, each with a Python script and a Slurm job script you can download, are on the website: https://xmum-aihub.github.io/#examples
@@ -286,10 +274,8 @@ Complete example scripts, each with a Python script and a Slurm job script you c
 
 5. Checkpoint and resume long training that runs past the time limit.
 
-6. Hyperparameter sweep with a Slurm job array (`#SBATCH --array=0-3%2`).
+6. Hyperparameter sweep with a Slurm job array (`#SBATCH --array=0-3%1`, one task at a time).
 
-7. Use multiple GPUs with PyTorch DDP and `torchrun`.
-
-8. Hugging Face models: run a small LLM, and fine-tune DistilBERT on IMDb reviews.
+7. Hugging Face models: run a small LLM, and fine-tune DistilBERT on IMDb reviews.
 
 More monitoring commands: `tail -f output_<job_id>.txt`, `sacct -j <job_id>`, `scontrol show job <job_id>`, `sinfo`, `nvidia-smi`.

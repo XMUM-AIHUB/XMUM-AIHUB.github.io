@@ -8,7 +8,7 @@
     How to edit (for admins)
     This is a static site with no build step. Edit this file, commit to main, and GitHub
     Pages republishes it in about a minute. Search for "ADMIN:" to find the parts you are
-    most likely to change: announcements, contact, GPU options, and the Jupyter section.
+    most likely to change: announcements, contact, and GPU options.
 
     Code blocks
       <div class="code" data-where="server" …><pre><code>command</code></pre></div>
@@ -21,7 +21,7 @@
       Put <pre><code> and </code></pre> right against the text, with no newlines inside.
 
     Personalized values
-      <var data-var="username">username</var>   also "hostname", "sshport" and "jport" (Jupyter port).
+      <var data-var="username">username</var>   also "hostname" and "sshport".
       The text inside is what readers see before they fill in their details, or without JavaScript.
       Placeholders that readers must replace themselves: <var>&lt;job_id&gt;</var>
 
@@ -53,8 +53,8 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link rel="stylesheet" href="assets/css/site.css?v=20261022b">
-  <script src="assets/js/main.js?v=20261022b" defer></script>
+  <link rel="stylesheet" href="assets/css/site.css?v=20261023">
+  <script src="assets/js/main.js?v=20261023" defer></script>
 </head>
 <body>
   <!-- Icon sprite (Feather icons, MIT licence). Use with <svg class="icon"><use href="#i-name"/></svg>. -->
@@ -86,7 +86,6 @@
     <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
     <symbol id="i-refresh" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></symbol>
-    <symbol id="i-shuffle" viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></symbol>
     <symbol id="i-layers" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
     <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></symbol>
   </svg>
@@ -185,9 +184,6 @@
           </ol>
           <p class="toc__group" id="toc-extras">Extras</p>
           <ul class="toc__list" role="list" aria-labelledby="toc-extras">
-            <!-- BEGIN JUPYTER (contents entry) -->
-            <li><a href="#jupyter">Jupyter Notebook</a></li>
-            <!-- END JUPYTER (contents entry) -->
             <li><a href="#examples">Worked examples</a></li>
             <li class="js-only"><a href="#builder">Job script builder</a></li>
             <li class="js-only"><a href="#cheatsheet">Command cheat sheet</a></li>
@@ -295,6 +291,10 @@
           <div class="rule" id="rule-data-security">
             <dt><svg class="icon rule__icon" aria-hidden="true" focusable="false"><use href="#i-shield"/></svg>Data Security</dt>
             <dd>Do not attempt to access or interfere with other users' data or jobs.</dd>
+          </div>
+          <div class="rule" id="rule-one-gpu">
+            <dt><svg class="icon rule__icon" aria-hidden="true" focusable="false"><use href="#i-cpu"/></svg>One GPU at Most</dt>
+            <dd>Each job may request at most 1 GPU (<code>--gres=gpu:1</code>). The GPUs are shared, so do not request more.</dd>
           </div>
           <div class="rule" id="rule-report-issues">
             <dt><svg class="icon rule__icon" aria-hidden="true" focusable="false"><use href="#i-flag"/></svg>Report Issues</dt>
@@ -466,7 +466,7 @@
             <div class="code" data-where="server" data-cheat="Run a Python script interactively on 1 GPU" data-keywords="srun interactive gpu run"><pre><code>srun <span class="flag" data-flag="gres">--gres=gpu:1</span> <span class="flag" data-flag="time">--time=00:30:00</span> <span class="flag" data-flag="mem">--mem=500M</span> python my_script.py</code></pre></div>
             <p class="flags__intro">Information:</p>
             <dl class="flags">
-              <div class="flags__item" data-flag="gres"><dt><code>--gres=gpu:1</code></dt><dd>Specifies 1 GPU.</dd></div>
+              <div class="flags__item" data-flag="gres"><dt><code>--gres=gpu:1</code></dt><dd>Specifies 1 GPU, the most a job may use.</dd></div>
               <div class="flags__item" data-flag="time"><dt><code>--time=00:30:00</code></dt><dd>Sets a 30-minute runtime limit.</dd></div>
               <div class="flags__item" data-flag="mem"><dt><code>--mem=500M</code></dt><dd>Allocates 500MB of memory.</dd></div>
             </dl>
@@ -551,123 +551,12 @@ python my_script.py</code></pre></div>
             <svg class="icon callout__icon" aria-hidden="true" focusable="false"><use href="#i-info"/></svg>
             <p><strong>Note:</strong> Always confirm job parameters and resource requests as appropriate for your cluster's policies to avoid overloading shared resources.</p>
           </div>
-          <p>Ready for real workloads? See the <a href="#examples">worked examples</a>: training with PyTorch and TensorFlow, job arrays, multiple GPUs and Hugging Face models.</p>
+          <p>Ready for real workloads? See the <a href="#examples">worked examples</a>: training with PyTorch and TensorFlow, job arrays and Hugging Face models.</p>
           <p class="done js-only">
             <label class="check"><input type="checkbox" data-done="step-6"> <span>I've finished step 6</span></label>
           </p>
         </section>
       </section>
-
-      <!-- BEGIN JUPYTER ===================================================================
-           To remove this section, delete everything down to "END JUPYTER", plus the
-           "BEGIN/END JUPYTER (contents entry)" lines in the sidebar.
-
-           ADMIN: Steps 1–3 were reconstructed because the README only had steps 4–5.
-           Please check these assumptions before publishing:
-             1. Jobs run on the machine users log in to, so the 127.0.0.1 tunnel works.
-                If they don't, tunnel to the node shown in squeue's NODELIST
-                (ssh -N -L PORT:<node>:PORT …) and start Jupyter with --ip=0.0.0.0.
-             2. sshd allows TCP port forwarding for these (restricted-shell) accounts.
-             3. `jupyter` is available after `module load anaconda`.
-             4. Jupyter jobs may hold a GPU, the 2 h / 8G defaults are acceptable, and
-                ports 20000–29999 are free on the server.
-      ===================================================================================== -->
-      <section id="jupyter" class="section" data-label="Jupyter" aria-labelledby="jupyter-title">
-        <h2 id="jupyter-title">Jupyter Notebook on the Server</h2>
-        <p class="section__lead">Run Jupyter as a Slurm job on the GPU server and use it in the browser on your own computer, through an SSH tunnel.</p>
-
-        <div id="jupyter-port" class="port-picker">
-          <div class="js-only">
-            <label class="port-picker__label" for="in-jport">Your Jupyter port</label>
-            <div class="port-picker__row">
-              <input id="in-jport" data-input="jport" type="text" inputmode="numeric" maxlength="5" autocomplete="off" spellcheck="false" aria-describedby="jport-hint jport-msg">
-              <button id="jport-new" class="btn btn--secondary btn--sm" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-shuffle"/></svg>Pick another port</button>
-            </div>
-            <p id="jport-hint" class="field__hint">Everyone on the server needs a different port. Use this number wherever <code>PORT</code> appears below.</p>
-            <p id="jport-msg" class="field__msg" hidden></p>
-          </div>
-          <p class="nojs-only">Choose a number between 20000 and 29999 and use it wherever <code>PORT</code> appears below.</p>
-        </div>
-
-        <ol class="jsteps" role="list">
-          <li id="jupyter-script" class="jstep">
-            <h3 class="jstep__title">Create a Jupyter job script</h3>
-            <p>On the server, create <code>jupyter_job.sh</code> (press <kbd>i</kbd> to edit; <kbd>Esc</kbd> then <kbd>:wq</kbd> to save):</p>
-            <div class="code" data-where="server"><pre><code>vim jupyter_job.sh</code></pre></div>
-            <p>Add these lines:</p>
-            <div class="code" data-where="server" data-title="jupyter_job.sh" data-download="jupyter_job.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
-<span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=jupyter</span>             <span class="tok-comment"># Job name</span>
-<span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=output.txt</span>            <span class="tok-comment"># Jupyter log, including the URL and token</span>
-<span class="tok-key">#SBATCH</span> <span class="tok-flag">--gres=gpu:1</span>                   <span class="tok-comment"># Number of GPUs</span>
-<span class="tok-key">#SBATCH</span> <span class="tok-flag">--time=02:00:00</span>                <span class="tok-comment"># Time limit (2 h)</span>
-<span class="tok-key">#SBATCH</span> <span class="tok-flag">--mem=8G</span>                       <span class="tok-comment"># Memory (8 GB)</span>
-
-<span class="tok-comment"># Load necessary modules</span>
-module load anaconda
-
-<span class="tok-comment"># Start Jupyter on your port (reachable only through your SSH tunnel)</span>
-jupyter notebook --no-browser --ip=127.0.0.1 --port=<var data-var="jport">PORT</var> --port-retries=0</code></pre></div>
-            <p class="tip">There's deliberately no <code>--error</code> line. Jupyter prints its URL to the error stream, and without that line Slurm writes both streams to <code>output.txt</code>.</p>
-          </li>
-
-          <li id="jupyter-submit" class="jstep">
-            <h3 class="jstep__title">Submit it and wait for it to start</h3>
-            <div class="code" data-where="server" data-cheat="Start Jupyter as a Slurm job" data-keywords="jupyter notebook sbatch start"><pre><code>sbatch jupyter_job.sh</code></pre></div>
-            <div class="code" data-where="server"><pre><code>squeue -u <var data-var="username">username</var></code></pre></div>
-            <p>Wait until the <strong>ST</strong> column shows <code>R</code> (running).</p>
-            <div class="callout callout--warn" role="note">
-              <svg class="icon callout__icon" aria-hidden="true" focusable="false"><use href="#i-alert-triangle"/></svg>
-              <p>Until the job starts, <code>output.txt</code> may still contain the URL from your previous session. Run these commands in the folder where you created the script.</p>
-            </div>
-          </li>
-
-          <li id="jupyter-tunnel" class="jstep">
-            <h3 class="jstep__title">Open an SSH tunnel from your computer</h3>
-            <p>In a <strong>new terminal on your own computer</strong>, not on the server, run:</p>
-            <div class="code" data-where="local" data-cheat="Open the SSH tunnel for Jupyter" data-keywords="jupyter tunnel port forward ssh"><pre><code>ssh -N -L <var data-var="jport">PORT</var>:127.0.0.1:<var data-var="jport">PORT</var> -p <var data-var="sshport">port</var> <var data-var="username">username</var>@<var data-var="hostname">hostname</var></code></pre></div>
-            <p>Enter your password. After that the window shows nothing, which is normal. Keep it open while you use Jupyter, and press <kbd>Ctrl</kbd> <kbd>C</kbd> to close the tunnel.</p>
-            <details class="explain">
-              <summary>What do <code>-N</code> and <code>-L</code> do?</summary>
-              <p><code>-L <var data-var="jport">PORT</var>:127.0.0.1:<var data-var="jport">PORT</var></code> forwards that port on your computer to the same port on the server, where Jupyter is listening. <code>-N</code> tells SSH not to open a shell, so it only keeps the tunnel open. <code>-p <var data-var="sshport">port</var></code> is the server's SSH port, the same one you log in with; it is not your Jupyter port.</p>
-            </details>
-          </li>
-
-          <li id="jupyter-url" class="jstep">
-            <h3 class="jstep__title">Find the Jupyter URL and token</h3>
-            <p>Find the jupyter URL with token from output.txt file:</p>
-            <div class="code" data-where="server" data-cheat="Find the Jupyter URL and token" data-keywords="jupyter url token output"><pre><code>cat output.txt</code></pre></div>
-            <p>Look for the line that starts with <code>http://127.0.0.1:<var data-var="jport">PORT</var>/</code> and contains <code>token=</code>, and copy the whole URL.</p>
-          </li>
-
-          <li id="jupyter-use" class="jstep">
-            <h3 class="jstep__title">Open Jupyter in your browser</h3>
-            <p>Use jupyter notebook from your local machine as normal, with the computation performed on the server. Paste the URL into your browser. It works as-is, because the tunnel uses the same port on both ends.</p>
-          </li>
-        </ol>
-
-        <div id="jupyter-stop" class="callout callout--note" role="note">
-          <svg class="icon callout__icon" aria-hidden="true" focusable="false"><use href="#i-info"/></svg>
-          <div>
-            <p><strong>When you're done:</strong> cancel the job so the GPU is free for others, then press <kbd>Ctrl</kbd> <kbd>C</kbd> in the tunnel window. Anyone with your token URL can run code as you, so never share it.</p>
-            <div class="code" data-where="server"><pre><code>scancel <var>&lt;job_id&gt;</var></code></pre></div>
-          </div>
-        </div>
-
-        <details class="explain" id="jupyter-troubleshooting">
-          <summary>Troubleshooting</summary>
-          <dl class="trouble">
-            <dt><samp>port … is already in use</samp> or <samp>no available port could be found</samp> in <code>output.txt</code></dt>
-            <dd>Someone else is using that port. Pick another port, update <code>--port</code> in <code>jupyter_job.sh</code>, and submit again.</dd>
-            <dt><samp>bind … Address already in use</samp> when opening the tunnel</dt>
-            <dd>That port is busy on your own computer. Pick another port and use it in both the script and the tunnel.</dd>
-            <dt><samp>channel … open failed: connect failed: Connection refused</samp></dt>
-            <dd>Jupyter isn't running yet, or the port is wrong. Check <code>squeue</code> and <code>output.txt</code>.</dd>
-            <dt><samp>administratively prohibited</samp></dt>
-            <dd>Port forwarding isn't allowed for your account. Contact the server administrator.</dd>
-          </dl>
-        </details>
-      </section>
-      <!-- END JUPYTER ======================================================================= -->
 
       <!-- BEGIN EXAMPLES ==================================================================
            Worked examples. The scripts below are plain text inside <pre><code>; keep
@@ -676,7 +565,7 @@ jupyter notebook --no-browser --ip=127.0.0.1 --port=<var data-var="jport">PORT</
            ADMIN: Please check these assumptions before announcing the examples:
              1. Jobs can reach the internet (MNIST, CIFAR-10 and Hugging Face models are
                 downloaded the first time a job runs).
-             2. --cpus-per-task is accepted, and 2 GPUs can be requested for Example 7.
+             2. --cpus-per-task is accepted.
              3. Home directories have room for conda environments and the Hugging Face
                 cache (several GB).
       ===================================================================================== -->
@@ -709,12 +598,8 @@ jupyter notebook --no-browser --ip=127.0.0.1 --port=<var data-var="jport">PORT</
             <span class="method-card__title">6 · Hyperparameter sweep</span>
             <span class="method-card__text">Try several learning rates at once with a Slurm job array.</span>
           </a>
-          <a class="method-card" href="#ex-ddp">
-            <span class="method-card__title">7 · Use multiple GPUs</span>
-            <span class="method-card__text">Split training across 2 GPUs with PyTorch DDP and <code>torchrun</code>.</span>
-          </a>
           <a class="method-card" href="#ex-hf">
-            <span class="method-card__title">8 · Hugging Face models</span>
+            <span class="method-card__title">7 · Hugging Face models</span>
             <span class="method-card__text">Run a small LLM, and fine-tune DistilBERT on movie reviews.</span>
           </a>
         </div>
@@ -773,7 +658,7 @@ Matrix multiply on the GPU: OK</code></pre></div>
 
         <section id="ex-conda" class="method" data-label="Example 2" aria-labelledby="ex-conda-title">
           <h3 id="ex-conda-title">Example 2: Create your own conda environment</h3>
-          <p>The Anaconda module already includes PyTorch and TensorFlow, which is enough for Examples 1 and 3–7. When you need other packages (for example Hugging Face in Example 8) or specific versions, create your own environment. You only do this once, from your normal login shell.</p>
+          <p>The Anaconda module already includes PyTorch and TensorFlow, which is enough for Examples 1 and 3–6. When you need other packages (for example Hugging Face in Example 7) or specific versions, create your own environment. You only do this once, from your normal login shell.</p>
           <ol class="steps-list">
             <li>
               <p>Load Anaconda and create an environment called <code>myenv</code>:</p>
@@ -787,7 +672,7 @@ conda activate myenv</code></pre></div>
               <p>Your prompt now starts with <code>(myenv)</code>. The first line sets up the <code>conda activate</code> command, so it works without running <code>conda init</code>.</p>
             </li>
             <li>
-              <p>Install packages with <code>pip</code>. For example, PyTorch plus the Hugging Face libraries used in Example 8:</p>
+              <p>Install packages with <code>pip</code>. For example, PyTorch plus the Hugging Face libraries used in Example 7:</p>
               <div class="code" data-where="server" data-cheat="Install Python packages into your environment" data-keywords="pip install packages torch transformers huggingface"><pre><code>pip install torch torchvision
 pip install transformers datasets accelerate</code></pre></div>
             </li>
@@ -1074,7 +959,7 @@ Epoch 19/30: test accuracy 86.41%, 98.3s, checkpoint saved
           <div class="code" data-where="server" data-title="sweep.sh" data-download="sweep.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=lr_sweep</span>           <span class="tok-comment"># Job name</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=sweep_%A_%a.txt</span>      <span class="tok-comment"># %A = array job ID, %a = task number</span>
-<span class="tok-key">#SBATCH</span> <span class="tok-flag">--array=0-3%2</span>                 <span class="tok-comment"># Tasks 0 to 3, at most 2 running at once</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--array=0-3%1</span>                 <span class="tok-comment"># Tasks 0 to 3, one at a time (1 GPU)</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--gres=gpu:1</span>                  <span class="tok-comment"># GPUs per task</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--cpus-per-task=4</span>             <span class="tok-comment"># CPU cores per task</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--mem=4G</span>                      <span class="tok-comment"># Memory per task</span>
@@ -1090,7 +975,7 @@ echo "Task $SLURM_ARRAY_TASK_ID: learning rate $LR"
 
 python -u train_mnist.py --lr "$LR" --epochs 3 --save "mnist_lr_$LR.pt"</code></pre></div>
           <div class="code" data-where="server" data-cheat="Submit a job array (hyperparameter sweep)" data-keywords="example array sweep hyperparameter learning rate"><pre><code>sbatch sweep.sh</code></pre></div>
-          <p><code>squeue</code> shows the tasks as <code><var>&lt;job_id&gt;</var>_0</code>, <code><var>&lt;job_id&gt;</var>_1</code> and so on; waiting ones are grouped as <code><var>&lt;job_id&gt;</var>_[2-3%2]</code>. When they have finished, compare the results:</p>
+          <p><code>squeue</code> shows the tasks as <code><var>&lt;job_id&gt;</var>_0</code>, <code><var>&lt;job_id&gt;</var>_1</code> and so on; waiting ones are grouped as <code><var>&lt;job_id&gt;</var>_[1-3%1]</code>. When they have finished, compare the results:</p>
           <div class="code" data-where="server" data-cheat="Compare the results of a sweep" data-keywords="grep results accuracy array sweep"><pre><code>grep "Test accuracy" sweep_*.txt</code></pre></div>
           <div class="code" data-where="server" data-title="Example output" data-copy="false"><pre><code>sweep_4250_0.txt:Test accuracy: 11.35% (lr=0.1)
 sweep_4250_1.txt:Test accuracy: 98.12% (lr=0.01)
@@ -1099,115 +984,19 @@ sweep_4250_3.txt:Test accuracy: 97.64% (lr=0.0001)</code></pre></div>
           <details class="explain">
             <summary>What's happening?</summary>
             <ul>
-              <li><code>--array=0-3%2</code> creates tasks 0, 1, 2 and 3. The <code>%2</code> lets at most 2 run at the same time, so your sweep doesn't take every GPU. Please keep a limit like this.</li>
+              <li><code>--array=0-3%1</code> creates tasks 0, 1, 2 and 3. The <code>%1</code> runs them one after another, so your sweep never uses more than 1 GPU at a time. Always keep this limit.</li>
               <li><code>%A</code> and <code>%a</code> in <code>--output</code> become the array's job ID and the task number, so every task writes its own file.</li>
               <li>Each task saves its own model (<code>--save "mnist_lr_$LR.pt"</code>) so they don't overwrite each other.</li>
               <li>Cancel one task with <code>scancel <var>&lt;job_id&gt;</var>_2</code>, or the whole array with <code>scancel <var>&lt;job_id&gt;</var></code>.</li>
             </ul>
           </details>
-          <p class="tip">Run Example 3 once before the sweep so MNIST is already downloaded. Otherwise two tasks may try to download it into <code>data</code> at the same time.</p>
         </section>
 
-        <section id="ex-ddp" class="method" data-label="Example 7" aria-labelledby="ex-ddp-title">
-          <h3 id="ex-ddp-title">Example 7: Use multiple GPUs with PyTorch DDP</h3>
-          <p>DistributedDataParallel (DDP) runs one copy of your training script per GPU. Each copy trains on a different part of every epoch's data, and the GPUs average their gradients after each step, so an epoch takes roughly half the time on 2 GPUs.</p>
-          <div class="callout callout--warn" role="note">
-            <svg class="icon callout__icon" aria-hidden="true" focusable="false"><use href="#i-alert-triangle"/></svg>
-            <p>GPUs are shared. Only use more than one if your single-GPU job is too slow, and check with <code>sinfo</code> and <code>squeue</code> that GPUs are free. A 2-GPU job also waits until 2 GPUs are free at the same time.</p>
-          </div>
-          <div class="code" data-where="server" data-title="ddp_train.py" data-download="ddp_train.py"><pre><code>"""Train ResNet-18 on CIFAR-10 on several GPUs at once with DistributedDataParallel (DDP).
-Start it with torchrun, which runs one copy of this script per GPU."""
-import os
-import time
-
-import torch
-import torch.distributed as dist
-import torch.nn.functional as F
-from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.utils.data import DataLoader
-from torch.utils.data.distributed import DistributedSampler
-from torchvision import datasets, models, transforms
-
-dist.init_process_group("nccl")
-rank = dist.get_rank()
-world_size = dist.get_world_size()
-local_rank = int(os.environ["LOCAL_RANK"])
-torch.cuda.set_device(local_rank)
-device = torch.device("cuda", local_rank)
-
-
-def log(message):
-    if rank == 0:  <span class="tok-comment"># print once, not once per GPU</span>
-        print(message, flush=True)
-
-
-log(f"Training on {world_size} GPUs")
-
-<span class="tok-comment"># Only the first process downloads; the others wait here until it has finished</span>
-if rank == 0:
-    datasets.CIFAR10("data", train=True, download=True)
-dist.barrier()
-
-transform = transforms.Compose([
-    transforms.RandomCrop(32, padding=4), transforms.RandomHorizontalFlip(), transforms.ToTensor(),
-    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)),
-])
-train_set = datasets.CIFAR10("data", train=True, transform=transform)
-sampler = DistributedSampler(train_set)  <span class="tok-comment"># gives each GPU a different part of the data</span>
-loader = DataLoader(train_set, batch_size=128, sampler=sampler, num_workers=4, pin_memory=True)
-
-model = DDP(models.resnet18(num_classes=10).to(device), device_ids=[local_rank])
-optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
-
-for epoch in range(1, 11):
-    sampler.set_epoch(epoch)  <span class="tok-comment"># shuffle differently every epoch</span>
-    model.train()
-    start, total_loss = time.time(), 0.0
-    for images, labels in loader:
-        images, labels = images.to(device), labels.to(device)
-        optimizer.zero_grad()
-        loss = F.cross_entropy(model(images), labels)
-        loss.backward()  <span class="tok-comment"># DDP averages the gradients across all GPUs here</span>
-        optimizer.step()
-        total_loss += loss.item()
-    log(f"Epoch {epoch}: loss {total_loss / len(loader):.4f}, {time.time() - start:.1f}s")
-
-if rank == 0:
-    torch.save(model.module.state_dict(), "cifar_resnet18_ddp.pt")
-    log("Saved model to cifar_resnet18_ddp.pt")
-dist.destroy_process_group()</code></pre></div>
-          <div class="code" data-where="server" data-title="ddp_train.sh" data-download="ddp_train.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
-<span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=ddp</span>                <span class="tok-comment"># Job name</span>
-<span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=output_%j.txt</span>        <span class="tok-comment"># Output file name with job ID</span>
-<span class="tok-key">#SBATCH</span> <span class="tok-flag">--error=error_%j.txt</span>          <span class="tok-comment"># Error file name with job ID</span>
-<span class="tok-key">#SBATCH</span> <span class="tok-flag">--gres=gpu:2</span>                  <span class="tok-comment"># Number of GPUs</span>
-<span class="tok-key">#SBATCH</span> <span class="tok-flag">--cpus-per-task=8</span>             <span class="tok-comment"># CPU cores (4 per GPU)</span>
-<span class="tok-key">#SBATCH</span> <span class="tok-flag">--mem=16G</span>                     <span class="tok-comment"># Memory (16 GB)</span>
-<span class="tok-key">#SBATCH</span> <span class="tok-flag">--time=01:00:00</span>               <span class="tok-comment"># Time limit (1 h)</span>
-
-<span class="tok-comment"># Load necessary modules</span>
-module load anaconda
-
-<span class="tok-comment"># --nproc_per_node must match the number of GPUs in --gres above</span>
-torchrun --standalone --nproc_per_node=2 ddp_train.py</code></pre></div>
-          <div class="code" data-where="server" data-cheat="Run the multi-GPU (DDP) example" data-keywords="example ddp multi gpu distributed torchrun"><pre><code>sbatch ddp_train.sh</code></pre></div>
-          <details class="explain">
-            <summary>What's different from single-GPU training?</summary>
-            <ul>
-              <li><code>torchrun</code> starts one process per GPU and gives each one a <code>LOCAL_RANK</code> (0, 1, …) that says which GPU to use.</li>
-              <li><code>DistributedSampler</code> splits the dataset between the processes, and <code>sampler.set_epoch(epoch)</code> reshuffles it every epoch.</li>
-              <li>The model is wrapped in <code>DDP(…)</code>, which keeps the copies in sync. To save it, use <code>model.module</code>, and only from rank 0.</li>
-              <li><code>batch_size=128</code> is per GPU, so 2 GPUs train on 256 images per step. If accuracy drops, try a slightly higher learning rate or fewer GPUs.</li>
-              <li>To compare, change both <code>--gres=gpu:2</code> and <code>--nproc_per_node=2</code> to 1 and look at the time per epoch.</li>
-            </ul>
-          </details>
-        </section>
-
-        <section id="ex-hf" class="method" data-label="Example 8" aria-labelledby="ex-hf-title">
-          <h3 id="ex-hf-title">Example 8: Hugging Face models</h3>
+        <section id="ex-hf" class="method" data-label="Example 7" aria-labelledby="ex-hf-title">
+          <h3 id="ex-hf-title">Example 7: Hugging Face models</h3>
           <p>Both parts use the <code>myenv</code> environment from <a href="#ex-conda">Example 2</a>, with <code>transformers</code>, <code>datasets</code> and <code>accelerate</code> installed. Models and datasets are downloaded the first time and cached in <code>~/.cache/huggingface</code>.</p>
 
-          <h4 id="ex-hf-generate">8a · Run a small LLM</h4>
+          <h4 id="ex-hf-generate">7a · Run a small LLM</h4>
           <p>Answers questions with <a href="https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct">Qwen2.5-0.5B-Instruct</a>, a small chat model that fits easily on one GPU.</p>
           <div class="code" data-where="server" data-title="hf_generate.py" data-download="hf_generate.py"><pre><code>"""Answer questions with a small open LLM from the Hugging Face Hub."""
 from transformers import pipeline
@@ -1247,7 +1036,7 @@ python -u hf_generate.py</code></pre></div>
           <div class="code" data-where="server" data-cheat="Run the Hugging Face LLM example" data-keywords="example huggingface llm generate text transformers qwen"><pre><code>sbatch hf_generate.sh</code></pre></div>
           <p class="tip">Change <code>questions</code> to ask your own. Larger models give better answers but need more GPU memory: as a rough guide, about 2 GB per billion parameters.</p>
 
-          <h4 id="ex-hf-finetune">8b · Fine-tune a model on your own task</h4>
+          <h4 id="ex-hf-finetune">7b · Fine-tune a model on your own task</h4>
           <p>Fine-tunes <a href="https://huggingface.co/distilbert/distilbert-base-uncased">DistilBERT</a> to label movie reviews from the IMDb dataset as positive or negative. It uses 2,000 reviews to keep the run to a few minutes, and reaches about 85–88% accuracy.</p>
           <div class="code" data-where="server" data-title="hf_finetune.py" data-download="hf_finetune.py"><pre><code>"""Fine-tune DistilBERT to label movie reviews (IMDb) as positive or negative."""
 import numpy as np
@@ -1365,15 +1154,13 @@ python -u hf_finetune.py</code></pre></div>
                 <div class="fieldset__grid fieldset__grid--3">
                   <div class="field">
                     <label for="b-gpus">GPUs</label>
-                    <!-- ADMIN: adjust these options to the number of GPUs on the server. -->
+                    <!-- ADMIN: jobs may use at most 1 GPU. If that changes, add options here and
+                         raise MAX_GPUS in assets/js/main.js. -->
                     <select id="b-gpus" name="gpus" aria-describedby="b-gpus-hint">
                       <option value="0">0 (CPU only)</option>
                       <option value="1" selected>1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="4">4</option>
                     </select>
-                    <p id="b-gpus-hint" class="field__hint">Request only what you need.</p>
+                    <p id="b-gpus-hint" class="field__hint">At most 1 GPU per job.</p>
                   </div>
                   <div class="field">
                     <label for="b-time">Time limit <span class="field__opt">optional</span></label>

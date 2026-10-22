@@ -1018,60 +1018,6 @@ var[data-var].is-unset { border-radius: 3px; cursor: pointer; }
 .explain[open] > summary { border-bottom: 1px solid var(--c-border); }
 .explain > :not(summary) { margin: var(--space-3) var(--space-4); }
 
-.trouble dt { margin-top: var(--space-3); font-weight: 600; }
-.trouble dt:first-child { margin-top: 0; }
-.trouble dd { margin: .2rem 0 0; color: var(--c-text-muted); }
-
-/* ---------- Jupyter ---------- */
-.port-picker {
-  margin: var(--space-4) 0 var(--space-6);
-  padding: var(--space-4);
-  border: 1px solid var(--c-primary-line);
-  border-radius: var(--radius);
-  background: var(--c-primary-soft);
-}
-.port-picker > :last-child { margin-bottom: 0; }
-.port-picker__label { display: block; margin-bottom: .4rem; font-weight: 700; }
-.port-picker__row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
-.port-picker .field__hint { margin-top: .5rem; font-size: var(--fs-sm); }
-#in-jport {
-  width: 7.5rem;
-  padding: .45rem;
-  font: 700 1.25rem/1 var(--font-mono);
-  letter-spacing: .04em;
-  text-align: center;
-}
-
-.jsteps { margin: 0 0 var(--space-5); padding: 0; list-style: none; counter-reset: jstep; }
-.jstep { position: relative; margin: 0; padding: 0 0 var(--space-5) 3.25rem; counter-increment: jstep; }
-.jsteps > li + li { margin-top: 0; }
-.jstep::before {
-  content: counter(jstep);
-  content: counter(jstep) / "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  display: grid;
-  place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 50%;
-  background: var(--c-primary);
-  color: var(--c-on-primary);
-  font-weight: 700;
-}
-.jstep::after {
-  content: "";
-  position: absolute;
-  top: 2.6rem;
-  bottom: .4rem;
-  left: calc(1.125rem - 1px);
-  width: 2px;
-  background: var(--c-border);
-}
-.jstep:last-child::after { display: none; }
-.jstep__title { margin: .3rem 0 var(--space-3); font-size: 1.15rem; }
-
 /* ---------- Builder ---------- */
 .builder__grid { display: grid; gap: var(--space-5); }
 .builder__form { min-width: 0; container: bform / inline-size; }
@@ -1231,7 +1177,7 @@ legend {
   }
   body { background: #fff; font-size: 11pt; }
   .site-header, .sidebar, .skip-link, .nav-backdrop, .code__actions, .hero__actions, .done,
-  .terminal, .port-picker, #builder, #cheatsheet, .tabs__list, body::before, body::after {
+  .terminal, #builder, #cheatsheet, .tabs__list, body::before, body::after {
     display: none !important;
   }
   .layout { display: block; max-width: none; padding: 0; }
@@ -1244,7 +1190,7 @@ legend {
   .tabs__panel[hidden] { display: block !important; }
   .tabs.is-enhanced .tabs__heading { display: block !important; }
   .tabs.is-enhanced .tabs__panel + .tabs__panel { border-top: 1px solid var(--c-border); }
-  .code, .rule, .step, .callout, .jstep, .flags__item, .cheat__item { break-inside: avoid; }
+  .code, .rule, .step, .callout, .flags__item, .cheat__item { break-inside: avoid; }
   h2, h3, h4 { break-after: avoid; }
   .rule, .step, .panel, .chip { box-shadow: none !important; }
   a[href^="http"]::after { content: " (" attr(href) ")"; font-size: .85em; color: #475467; word-break: break-all; }

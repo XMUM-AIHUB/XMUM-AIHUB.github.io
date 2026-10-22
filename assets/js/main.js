@@ -24,6 +24,7 @@
   const TIME_RE = /^(?:(\d{1,4})-(\d{1,2})(?::(\d{1,2}))?(?::(\d{1,2}))?|(\d{1,5})(?::(\d{1,2}))?(?::(\d{1,2}))?)$/;
   const MEM_RE = /^([1-9]\d{0,6})(?:([MGTmgt])[Bb]?)?$/;
   const NAME_HELP = 'Use letters, digits, dots, dashes or underscores, with no spaces.';
+  const MAX_GPUS = 1; // per job; matches the options in the builder's GPU menu
   const COMMENT_COLUMN = 39; // "#SBATCH …" is padded so comments start in column 40
 
   const BUILDER_DEFAULTS = Object.freeze({
@@ -41,7 +42,6 @@
 
   function isUser(s) { return typeof s === 'string' && USER_RE.test(s); }
   function isHost(s) { return typeof s === 'string' && HOST_RE.test(s); }
-  function isPort(n) { return Number.isInteger(n) && n >= 1024 && n <= 65535; }
   function isSshPort(s) { return typeof s === 'string' && /^\d{1,5}$/.test(s) && +s >= 1 && +s <= 65535; }
 
   function cleanUser(raw) { return String(raw == null ? '' : raw).trim(); }
@@ -70,24 +70,6 @@
     const at = s.lastIndexOf('@');
     if (at <= 0 || at === s.length - 1) return null;
     return { user: s.slice(0, at), host: s.slice(at + 1), port };
-  }
-
-  function fnv1a32(str) {
-    let h = 0x811c9dc5;
-    for (const byte of new TextEncoder().encode(String(str))) {
-      h ^= byte;
-      h = Math.imul(h, 0x01000193) >>> 0;
-    }
-    return h >>> 0;
-  }
-
-  /** A stable per-user Jupyter port in 20000–29999, the same on every device. */
-  function portFor(username) { return 20000 + (fnv1a32(String(username).toLowerCase()) % 10000); }
-
-  function randomPort(exclude) {
-    let p;
-    do { p = 20000 + Math.floor(Math.random() * 10000); } while (p === exclude);
-    return p;
   }
 
   /** Slurm time string → seconds, or null if invalid or zero. */
@@ -217,7 +199,7 @@
     else if (v.err && !hasJobId(v.err)) warnings.err = 'Without %j, every job overwrites this file.';
 
     const gpus = Number(get('gpus'));
-    v.gpus = Number.isInteger(gpus) && gpus >= 0 && gpus <= 16 ? gpus : BUILDER_DEFAULTS.gpus;
+    v.gpus = Number.isInteger(gpus) && gpus >= 0 && gpus <= MAX_GPUS ? gpus : BUILDER_DEFAULTS.gpus;
 
     v.time = get('time');
     if (v.time && parseTime(v.time) === null) {
@@ -269,8 +251,7 @@
   }
 
   const Pure = {
-    BUILDER_DEFAULTS, isUser, isHost, isPort, cleanUser, cleanHost, splitUserHost, fnv1a32, portFor,
-    randomPort, parseTime, formatDuration, describeTime, normMem, memLabel, hasJobId, resolveOutput,
+    BUILDER_DEFAULTS, isUser, isHost, isSshPort, cleanUser, cleanHost, splitUserHost, parseTime, formatDuration, describeTime, normMem, memLabel, hasJobId, resolveOutput,
     buildScript, buildSrun, shQuote, validateBuilder, cleanCopyText, placeholdersIn, listJoin,
   };
 
@@ -415,12 +396,12 @@
   }
 
   /* =========================================================================
-   * Personalization: username, hostname, SSH port (and the Jupyter port via a getter)
+   * Personalization: username, hostname, SSH port
    * ========================================================================= */
   const Vars = (() => {
     const values = { username: '', hostname: '', sshport: '' };
     const getters = {};
-    const LABELS = { username: 'username', hostname: 'server address', sshport: 'SSH port', jport: 'Jupyter port' };
+    const LABELS = { username: 'username', hostname: 'server address', sshport: 'SSH port' };
     let userIn = null;
     let hostIn = null;
     let sshPortIn = null;
@@ -512,11 +493,6 @@
     }
 
     function focusInput(name) {
-      if (name === 'jport') {
-        const jport = document.getElementById('in-jport');
-        if (jport) jport.focus();
-        return;
-      }
       Nav.reveal(name === 'hostname' ? hostIn : name === 'sshport' ? sshPortIn : userIn);
     }
 
@@ -978,85 +954,6 @@
   }
 
   /* =========================================================================
-   * Jupyter port: derived from the username, or the reader's own choice
-   * ========================================================================= */
-  function initJupyter() {
-    const input = document.getElementById('in-jport');
-    if (!document.getElementById('jupyter') || !input) return;
-    const hint = document.getElementById('jport-hint');
-    const message = document.getElementById('jport-msg');
-    const shuffle = document.getElementById('jport-new');
-    let override = store.get('jport', null);
-    if (!isPort(override)) override = null;
-
-    const port = () => {
-      if (override) return String(override);
-      const user = Vars.get('username');
-      return user ? String(portFor(user)) : '';
-    };
-    Vars.register('jport', port);
-
-    function setMessage(text) {
-      if (text) input.setAttribute('aria-invalid', 'true');
-      else input.removeAttribute('aria-invalid');
-      if (message) {
-        message.textContent = text;
-        message.hidden = !text;
-      }
-    }
-    const showLater = debounce(setMessage, 500);
-
-    function sync() {
-      const value = port();
-      if (document.activeElement !== input) input.value = value;
-      input.placeholder = value ? '' : 'PORT';
-      if (!hint) return;
-      if (override) hint.textContent = 'Your own choice. Clear the box to go back to the suggested port.';
-      else if (value) hint.textContent = 'Suggested from your username, so it is the same on every device. Use it wherever PORT appears below.';
-      else hint.textContent = 'Enter your username under "Your details" for a suggested port, or pick one.';
-    }
-
-    input.addEventListener('input', () => {
-      const digits = input.value.replace(/\D+/g, '');
-      if (digits !== input.value) input.value = digits;
-      if (!digits) {
-        override = null;
-        store.remove('jport');
-        showLater.cancel();
-        setMessage('');
-      } else if (isPort(Number(digits))) {
-        override = Number(digits);
-        store.set('jport', override);
-        showLater.cancel();
-        setMessage('');
-      } else {
-        showLater('Use a number from 1024 to 65535.');
-        return;
-      }
-      Vars.apply(document);
-      sync();
-    });
-    input.addEventListener('blur', () => {
-      showLater.cancel();
-      setMessage('');
-      sync(); // an invalid entry snaps back to the port in use
-    });
-    if (shuffle) {
-      shuffle.addEventListener('click', () => {
-        override = randomPort(Number(port()) || 0);
-        store.set('jport', override);
-        setMessage('');
-        Vars.apply(document);
-        sync();
-        announce('Your Jupyter port is now ' + override + '.');
-      });
-    }
-    document.addEventListener('aihub:vars', sync);
-    Vars.apply(document);
-    sync();
-  }
-
-  /* =========================================================================
    * Job script builder
    * ========================================================================= */
   function renderCode(codeEl, text) {
@@ -1286,7 +1183,6 @@
       ['cheatsheet', buildCheatsheet],
       ['code', () => Code.enhance(document)],
       ['vars', Vars.init],
-      ['jupyter', initJupyter],
       ['tabs', initTabs],
       ['nav', Nav.init],
       ['progress', initProgress],
