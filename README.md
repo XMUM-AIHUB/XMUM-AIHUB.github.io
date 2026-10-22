@@ -78,15 +78,17 @@ To Login via SSH:
 
 2. Run the SSH Command:
 
-   ssh username@hostname
+   ssh -p port username@hostname
 
    - Replace `username` with your remote server username.
 
    - Replace `hostname` with the IP address or domain name of the server.
 
+   - Replace `port` with the server's SSH port (use 22 if you weren't given one).
+
    Example:
 
-		ssh user123@cluster.example.com
+		ssh -p 22 user123@cluster.example.com
 
 
 3. Authenticate by entering your password if prompted. List of allowed commands will be displayed after login.
@@ -95,7 +97,29 @@ To Login via SSH:
 ----------------------------------------------------------------------------------------------------------------
 
 
-### Step 2: Load Required Modules
+### Step 2: Access a Compute Node
+
+
+**Required:** you must run this command before you continue to Step 3. Every step after this one is done on the compute node.
+
+1. After logging in you are on the login node. Open a shell on a compute node:
+
+		srun --pty bash -l
+
+   - `--pty` connects the session to your terminal, and `bash -l` starts a login shell so commands like `module` work.
+
+   - Your prompt changes to show the compute node's name. If the server is busy, wait until the shell opens.
+
+
+2. When you have finished working, leave the compute node so its resources are freed for others:
+
+		exit
+
+
+----------------------------------------------------------------------------------------------------------------
+
+
+### Step 3: Load Required Modules
 
 
 Modules often access specific software or libraries on a shared server (currently, only Anaconda is installed with the latest Torch, TensorFlow). You can also install packages with pip and create your python environment with conda.
@@ -131,7 +155,7 @@ Listing and Loading Modules:
 ----------------------------------------------------------------------------------------------------------------
 
 
-### Step 3: Prepare a Slurm Job Script
+### Step 4: Prepare a Slurm Job Script
 
 
 There are two ways to submit jobs to SLURM.
@@ -190,7 +214,7 @@ There are two ways to submit jobs to SLURM.
 ----------------------------------------------------------------------------------------------------------------
 
 
-### Step 4: Submit the Job to Slurm
+### Step 5: Submit the Job to Slurm
 
 
 - To Submit the Job:
@@ -215,7 +239,7 @@ There are two ways to submit jobs to SLURM.
 ----------------------------------------------------------------------------------------------------------------
 
 
-### Step 5: Monitor and Manage Jobs
+### Step 6: Monitor and Manage Jobs
 
 
 Common Job Management Commands:
@@ -243,3 +267,29 @@ Note: Always confirm job parameters and resource requests as appropriate for you
 
 
 5. Use jupyter notebook from your local machine as normal, with the computation performed on the server.
+
+
+----------------------------------------------------------------------------------------------------------------
+
+
+### Worked Examples
+
+Complete example scripts, each with a Python script and a Slurm job script you can download, are on the website: https://xmum-aihub.github.io/#examples
+
+1. Check your GPU: a first job that shows the GPU and runs a quick test on it.
+
+2. Create your own conda environment and install packages with pip.
+
+3. Train an image classifier (MNIST) with PyTorch.
+
+4. The same model with TensorFlow / Keras.
+
+5. Checkpoint and resume long training that runs past the time limit.
+
+6. Hyperparameter sweep with a Slurm job array (`#SBATCH --array=0-3%2`).
+
+7. Use multiple GPUs with PyTorch DDP and `torchrun`.
+
+8. Hugging Face models: run a small LLM, and fine-tune DistilBERT on IMDb reviews.
+
+More monitoring commands: `tail -f output_<job_id>.txt`, `sacct -j <job_id>`, `scontrol show job <job_id>`, `sinfo`, `nvidia-smi`.

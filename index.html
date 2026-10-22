@@ -21,7 +21,7 @@
       Put <pre><code> and </code></pre> right against the text, with no newlines inside.
 
     Personalized values
-      <var data-var="username">username</var>   also "hostname" and "jport" (Jupyter port).
+      <var data-var="username">username</var>   also "hostname", "sshport" and "jport" (Jupyter port).
       The text inside is what readers see before they fill in their details, or without JavaScript.
       Placeholders that readers must replace themselves: <var>&lt;job_id&gt;</var>
 
@@ -53,8 +53,8 @@
       } catch (e) {}
     })(document.documentElement);
   </script>
-  <link rel="stylesheet" href="assets/css/site.css?v=20261022">
-  <script src="assets/js/main.js?v=20261022" defer></script>
+  <link rel="stylesheet" href="assets/css/site.css?v=20261022b">
+  <script src="assets/js/main.js?v=20261022b" defer></script>
 </head>
 <body>
   <!-- Icon sprite (Feather icons, MIT licence). Use with <svg class="icon"><use href="#i-name"/></svg>. -->
@@ -146,9 +146,15 @@
             <p id="in-hostname-hint" class="field__hint">The IP address or domain name you were given.</p>
             <p id="in-hostname-msg" class="field__msg" hidden></p>
           </div>
+          <div class="field">
+            <label for="in-sshport">SSH port</label>
+            <input id="in-sshport" data-input="sshport" type="text" inputmode="numeric" maxlength="5" autocomplete="off" spellcheck="false" placeholder="e.g. 22" aria-describedby="in-sshport-hint in-sshport-msg">
+            <p id="in-sshport-hint" class="field__hint">The port number you were given. If you weren't given one, use 22.</p>
+            <p id="in-sshport-msg" class="field__msg" hidden></p>
+          </div>
           <div class="details__preview">
             <span class="details__preview-label">Your login command</span>
-            <code>ssh <var data-var="username">username</var>@<var data-var="hostname">hostname</var></code>
+            <code>ssh -p <var data-var="sshport">port</var> <var data-var="username">username</var>@<var data-var="hostname">hostname</var></code>
           </div>
           <button id="details-clear" class="link-btn" type="button">Clear my details</button>
           <p id="storage-note" class="panel__note" hidden>Your browser is blocking storage, so these details will be forgotten when you leave the page.</p>
@@ -156,8 +162,8 @@
 
         <section id="progress" class="panel js-only" aria-labelledby="progress-title">
           <h2 id="progress-title" class="panel__title">Your progress</h2>
-          <progress id="progress-bar" class="progress" max="6" value="0" aria-labelledby="progress-title" aria-describedby="progress-count"></progress>
-          <p class="progress__meta"><span id="progress-count">0 of 6 done</span> <button id="progress-reset" class="link-btn" type="button">Reset</button></p>
+          <progress id="progress-bar" class="progress" max="7" value="0" aria-labelledby="progress-title" aria-describedby="progress-count"></progress>
+          <p class="progress__meta"><span id="progress-count">0 of 7 done</span> <button id="progress-reset" class="link-btn" type="button">Reset</button></p>
         </section>
 
         <nav id="toc" class="toc" aria-label="On this page">
@@ -171,16 +177,18 @@
           <ol class="toc__list" role="list" aria-labelledby="toc-tutorial">
             <li><a href="#prerequisites">Prerequisites</a></li>
             <li><a href="#step-1" data-done-for="step-1"><span class="toc__num" aria-hidden="true">1</span> Log in to the server</a></li>
-            <li><a href="#step-2" data-done-for="step-2"><span class="toc__num" aria-hidden="true">2</span> Load modules</a></li>
-            <li><a href="#step-3" data-done-for="step-3"><span class="toc__num" aria-hidden="true">3</span> Prepare a job script</a></li>
-            <li><a href="#step-4" data-done-for="step-4"><span class="toc__num" aria-hidden="true">4</span> Submit the job</a></li>
-            <li><a href="#step-5" data-done-for="step-5"><span class="toc__num" aria-hidden="true">5</span> Monitor and manage jobs</a></li>
+            <li><a href="#step-2" data-done-for="step-2"><span class="toc__num" aria-hidden="true">2</span> Access a compute node</a></li>
+            <li><a href="#step-3" data-done-for="step-3"><span class="toc__num" aria-hidden="true">3</span> Load modules</a></li>
+            <li><a href="#step-4" data-done-for="step-4"><span class="toc__num" aria-hidden="true">4</span> Prepare a job script</a></li>
+            <li><a href="#step-5" data-done-for="step-5"><span class="toc__num" aria-hidden="true">5</span> Submit the job</a></li>
+            <li><a href="#step-6" data-done-for="step-6"><span class="toc__num" aria-hidden="true">6</span> Monitor and manage jobs</a></li>
           </ol>
           <p class="toc__group" id="toc-extras">Extras</p>
           <ul class="toc__list" role="list" aria-labelledby="toc-extras">
             <!-- BEGIN JUPYTER (contents entry) -->
             <li><a href="#jupyter">Jupyter Notebook</a></li>
             <!-- END JUPYTER (contents entry) -->
+            <li><a href="#examples">Worked examples</a></li>
             <li class="js-only"><a href="#builder">Job script builder</a></li>
             <li class="js-only"><a href="#cheatsheet">Command cheat sheet</a></li>
           </ul>
@@ -214,17 +222,18 @@
             <span class="terminal__dots"><i></i><i></i><i></i></span>
             <span class="terminal__title">Quick start</span>
           </div>
-          <figcaption id="terminal-caption" class="visually-hidden">Quick start: log in from your computer, then load Anaconda, submit a job and check its status on the server.</figcaption>
+          <figcaption id="terminal-caption" class="visually-hidden">Quick start: log in from your computer, open a shell on a compute node, then load Anaconda, submit a job and check its status.</figcaption>
           <div class="terminal__body">
-            <span class="terminal__line" style="--i:0"><span class="terminal__prompt terminal__prompt--local" aria-hidden="true">you@laptop:~$</span> ssh <var data-var="username">username</var>@<var data-var="hostname">hostname</var></span>
+            <span class="terminal__line" style="--i:0"><span class="terminal__prompt terminal__prompt--local" aria-hidden="true">you@laptop:~$</span> ssh -p <var data-var="sshport">port</var> <var data-var="username">username</var>@<var data-var="hostname">hostname</var></span>
             <span class="terminal__line terminal__out" style="--i:1"><var data-var="username">username</var>@<var data-var="hostname">hostname</var>'s password:</span>
-            <span class="terminal__line" style="--i:2"><span class="terminal__prompt" aria-hidden="true"><var data-var="username">username</var>@server:~$</span> module load anaconda</span>
-            <span class="terminal__line" style="--i:3"><span class="terminal__prompt" aria-hidden="true"><var data-var="username">username</var>@server:~$</span> sbatch my_job_script.sh</span>
-            <span class="terminal__line terminal__out" style="--i:4">Submitted batch job 4242</span>
-            <span class="terminal__line" style="--i:5"><span class="terminal__prompt" aria-hidden="true"><var data-var="username">username</var>@server:~$</span> squeue -u <var data-var="username">username</var></span>
-            <span class="terminal__line terminal__out" style="--i:6">  JOBID  NAME    ST  TIME</span>
-            <span class="terminal__line terminal__out" style="--i:7">   4242  my_job  R   0:05</span>
-            <span class="terminal__line" style="--i:8"><span class="terminal__prompt" aria-hidden="true"><var data-var="username">username</var>@server:~$</span> <span class="terminal__cursor" aria-hidden="true"></span></span>
+            <span class="terminal__line" style="--i:2"><span class="terminal__prompt" aria-hidden="true"><var data-var="username">username</var>@server:~$</span> srun --pty bash -l</span>
+            <span class="terminal__line" style="--i:3"><span class="terminal__prompt" aria-hidden="true"><var data-var="username">username</var>@compute-node:~$</span> module load anaconda</span>
+            <span class="terminal__line" style="--i:4"><span class="terminal__prompt" aria-hidden="true"><var data-var="username">username</var>@compute-node:~$</span> sbatch my_job_script.sh</span>
+            <span class="terminal__line terminal__out" style="--i:5">Submitted batch job 4242</span>
+            <span class="terminal__line" style="--i:6"><span class="terminal__prompt" aria-hidden="true"><var data-var="username">username</var>@compute-node:~$</span> squeue -u <var data-var="username">username</var></span>
+            <span class="terminal__line terminal__out" style="--i:7">  JOBID  NAME    ST  TIME</span>
+            <span class="terminal__line terminal__out" style="--i:8">   4242  my_job  R   0:05</span>
+            <span class="terminal__line" style="--i:9"><span class="terminal__prompt" aria-hidden="true"><var data-var="username">username</var>@compute-node:~$</span> <span class="terminal__cursor" aria-hidden="true"></span></span>
           </div>
         </figure>
       </section>
@@ -327,7 +336,7 @@
 
       <section id="tutorial" class="section" aria-labelledby="tutorial-title">
         <h2 id="tutorial-title">Tutorial on Remote Login, Module Loading, and Job Submission with Slurm</h2>
-        <p class="section__lead">Five steps from your first login to a GPU job running on the server.</p>
+        <p class="section__lead">Six steps from your first login to a GPU job running on the server.</p>
 
         <section id="prerequisites" class="subsection" data-label="Prerequisites" aria-labelledby="prerequisites-title">
           <h3 id="prerequisites-title">Prerequisites</h3>
@@ -339,7 +348,7 @@
           </ul>
           <details class="explain">
             <summary>Connecting with FileZilla</summary>
-            <p>Use Host <code>sftp://<var data-var="hostname">hostname</var></code>, Username <code><var data-var="username">username</var></code>, your server password, and Port <code>22</code>, then click <strong>Quickconnect</strong>.</p>
+            <p>Use Host <code>sftp://<var data-var="hostname">hostname</var></code>, Username <code><var data-var="username">username</var></code>, your server password, and Port <code><var data-var="sshport">port</var></code>, then click <strong>Quickconnect</strong>.</p>
           </details>
         </section>
 
@@ -366,13 +375,14 @@
             </li>
             <li>
               <p>Run the SSH command:</p>
-              <div class="code" data-where="local" data-cheat="Log in to the server" data-keywords="login connect ssh"><pre><code>ssh <var data-var="username">username</var>@<var data-var="hostname">hostname</var></code></pre></div>
+              <div class="code" data-where="local" data-cheat="Log in to the server" data-keywords="login connect ssh"><pre><code>ssh -p <var data-var="sshport">port</var> <var data-var="username">username</var>@<var data-var="hostname">hostname</var></code></pre></div>
               <ul>
                 <li>Replace <code>username</code> with your remote server username.</li>
                 <li>Replace <code>hostname</code> with the IP address or domain name of the server.</li>
+                <li>Replace <code>port</code> with the server's SSH port.</li>
               </ul>
               <p>Example:</p>
-              <div class="code" data-where="local" data-title="Example" data-copy="false"><pre><code>ssh user123@cluster.example.com</code></pre></div>
+              <div class="code" data-where="local" data-title="Example" data-copy="false"><pre><code>ssh -p 22 user123@cluster.example.com</code></pre></div>
             </li>
             <li>
               <p>Authenticate by entering your password if prompted. A list of allowed commands will be displayed after login.</p>
@@ -388,7 +398,28 @@
         </section>
 
         <section id="step-2" class="step" data-label="Step 2" aria-labelledby="step-2-title">
-          <h3 id="step-2-title" class="step__title"><span class="step__kicker">Step 2<span class="visually-hidden">:</span></span> Load Required Modules</h3>
+          <h3 id="step-2-title" class="step__title"><span class="step__kicker">Step 2<span class="visually-hidden">:</span></span> Access a Compute Node</h3>
+          <div class="callout callout--warn" role="note">
+            <svg class="icon callout__icon" aria-hidden="true" focusable="false"><use href="#i-alert-triangle"/></svg>
+            <p><strong>Required:</strong> you must run this command before you continue to Step 3. Every step after this one is done on the compute node.</p>
+          </div>
+          <p>After you log in, you are on the login node. Run this command to open a shell on a compute node:</p>
+          <div class="code" data-where="server" data-cheat="Open a shell on a compute node (required after login)" data-keywords="srun pty bash compute node interactive shell login"><pre><code>srun --pty bash -l</code></pre></div>
+          <ul>
+            <li><code>srun</code> asks Slurm for a place to run, <code>--pty</code> connects it to your terminal, and <code>bash -l</code> starts a login shell there, so commands like <code>module</code> work.</li>
+            <li>When it is ready, your prompt shows the compute node's name instead of the login node's.</li>
+            <li>If the server is busy, you may see <samp>srun: job <var>&lt;job_id&gt;</var> queued and waiting for resources</samp>. Wait, and the shell opens when there is room.</li>
+          </ul>
+          <p>When you have finished working, leave the compute node so its resources are freed for others:</p>
+          <div class="code" data-where="server" data-cheat="Leave the compute node" data-keywords="exit leave compute node logout"><pre><code>exit</code></pre></div>
+          <p class="tip">This shell counts as a job, so it appears in <code>squeue -u <var data-var="username">username</var></code> while it is open.</p>
+          <p class="done js-only">
+            <label class="check"><input type="checkbox" data-done="step-2"> <span>I've finished step 2</span></label>
+          </p>
+        </section>
+
+        <section id="step-3" class="step" data-label="Step 3" aria-labelledby="step-3-title">
+          <h3 id="step-3-title" class="step__title"><span class="step__kicker">Step 3<span class="visually-hidden">:</span></span> Load Required Modules</h3>
           <p>Modules provide access to specific software or libraries on a shared server (currently, only Anaconda is installed with the latest PyTorch and TensorFlow). You can also install packages with pip and create your Python environment with conda.</p>
           <p>Listing and loading modules:</p>
           <ol class="steps-list">
@@ -411,12 +442,12 @@
             </li>
           </ol>
           <p class="done js-only">
-            <label class="check"><input type="checkbox" data-done="step-2"> <span>I've finished step 2</span></label>
+            <label class="check"><input type="checkbox" data-done="step-3"> <span>I've finished step 3</span></label>
           </p>
         </section>
 
-        <section id="step-3" class="step" data-label="Step 3" aria-labelledby="step-3-title">
-          <h3 id="step-3-title" class="step__title"><span class="step__kicker">Step 3<span class="visually-hidden">:</span></span> Prepare a Slurm Job Script</h3>
+        <section id="step-4" class="step" data-label="Step 4" aria-labelledby="step-4-title">
+          <h3 id="step-4-title" class="step__title"><span class="step__kicker">Step 4<span class="visually-hidden">:</span></span> Prepare a Slurm Job Script</h3>
           <p>There are two ways to submit jobs to Slurm.</p>
           <div class="method-picker">
             <a class="method-card" href="#method-1">
@@ -425,11 +456,11 @@
             </a>
             <a class="method-card" href="#method-2">
               <span class="method-card__title">Method 2 · Job script</span>
-              <span class="method-card__text">Write a job script and submit it with <code>sbatch</code>. It keeps running after you log out. Steps 4 and 5 use this method.</span>
+              <span class="method-card__text">Write a job script and submit it with <code>sbatch</code>. It keeps running after you log out. Steps 5 and 6 use this method.</span>
             </a>
           </div>
 
-          <section id="method-1" class="method" data-label="Step 3 · Method 1" aria-labelledby="method-1-title">
+          <section id="method-1" class="method" data-label="Step 4 · Method 1" aria-labelledby="method-1-title">
             <h4 id="method-1-title">Method 1: Run a Python script interactively</h4>
             <p>From terminal,</p>
             <div class="code" data-where="server" data-cheat="Run a Python script interactively on 1 GPU" data-keywords="srun interactive gpu run"><pre><code>srun <span class="flag" data-flag="gres">--gres=gpu:1</span> <span class="flag" data-flag="time">--time=00:30:00</span> <span class="flag" data-flag="mem">--mem=500M</span> python my_script.py</code></pre></div>
@@ -442,7 +473,7 @@
             <p>This will run <code>my_script.py</code> and display output directly in the terminal.</p>
           </section>
 
-          <section id="method-2" class="method" data-label="Step 3 · Method 2" aria-labelledby="method-2-title">
+          <section id="method-2" class="method" data-label="Step 4 · Method 2" aria-labelledby="method-2-title">
             <h4 id="method-2-title">Method 2: Submit a job script</h4>
             <p>To submit a python script to Slurm, you need a job script with specific configurations and commands. Below is a guide for creating a basic Slurm job script.</p>
             <ol class="steps-list">
@@ -474,12 +505,12 @@ python my_script.py</code></pre></div>
             </ol>
           </section>
           <p class="done js-only">
-            <label class="check"><input type="checkbox" data-done="step-3"> <span>I've finished step 3</span></label>
+            <label class="check"><input type="checkbox" data-done="step-4"> <span>I've finished step 4</span></label>
           </p>
         </section>
 
-        <section id="step-4" class="step" data-label="Step 4" aria-labelledby="step-4-title">
-          <h3 id="step-4-title" class="step__title"><span class="step__kicker">Step 4<span class="visually-hidden">:</span></span> Submit the Job to Slurm</h3>
+        <section id="step-5" class="step" data-label="Step 5" aria-labelledby="step-5-title">
+          <h3 id="step-5-title" class="step__title"><span class="step__kicker">Step 5<span class="visually-hidden">:</span></span> Submit the Job to Slurm</h3>
           <h4>To submit the job</h4>
           <div class="code" data-where="server" data-cheat="Submit a job script" data-keywords="sbatch submit batch queue"><pre><code>sbatch my_job_script.sh</code></pre></div>
           <p>This submits the job to Slurm, which will schedule and execute it based on resource availability and job priority. Slurm replies with <samp>Submitted batch job <var>&lt;job_id&gt;</var></samp>. Note the number.</p>
@@ -493,22 +524,36 @@ python my_script.py</code></pre></div>
           <p>After the job completes, check the output file specified in your script (e.g., <code>output_&lt;job_id&gt;.txt</code>) for results.</p>
           <div class="code" data-where="server" data-cheat="Read a job's output file" data-keywords="cat output results log view"><pre><code>cat output_<var>&lt;job_id&gt;</var>.txt</code></pre></div>
           <p class="done js-only">
-            <label class="check"><input type="checkbox" data-done="step-4"> <span>I've finished step 4</span></label>
+            <label class="check"><input type="checkbox" data-done="step-5"> <span>I've finished step 5</span></label>
           </p>
         </section>
 
-        <section id="step-5" class="step" data-label="Step 5" aria-labelledby="step-5-title">
-          <h3 id="step-5-title" class="step__title"><span class="step__kicker">Step 5<span class="visually-hidden">:</span></span> Monitor and Manage Jobs</h3>
+        <section id="step-6" class="step" data-label="Step 6" aria-labelledby="step-6-title">
+          <h3 id="step-6-title" class="step__title"><span class="step__kicker">Step 6<span class="visually-hidden">:</span></span> Monitor and Manage Jobs</h3>
           <p>Common job management commands:</p>
           <h4>Cancel a job</h4>
           <div class="code" data-where="server" data-cheat="Cancel a job" data-keywords="scancel stop kill cancel"><pre><code>scancel <var>&lt;job_id&gt;</var></code></pre></div>
           <p>Replace <code>&lt;job_id&gt;</code> with the ID of the job you want to cancel.</p>
+          <h4>Watch the output while a job runs</h4>
+          <div class="code" data-where="server" data-cheat="Follow a job's output live" data-keywords="tail follow watch live log output"><pre><code>tail -f output_<var>&lt;job_id&gt;</var>.txt</code></pre></div>
+          <p>Shows new lines as your job writes them. Press <kbd>Ctrl</kbd> <kbd>C</kbd> to stop watching; the job keeps running. If nothing appears, run Python with <code>python -u</code> so it doesn't hold back its output.</p>
+          <h4>See how a finished job went</h4>
+          <div class="code" data-where="server" data-cheat="Show the result of a finished job" data-keywords="sacct history state failed timeout memory finished"><pre><code>sacct -j <var>&lt;job_id&gt;</var> --format=JobID,JobName,State,Elapsed,MaxRSS</code></pre></div>
+          <p>The <strong>State</strong> column shows <code>COMPLETED</code>, <code>FAILED</code>, <code>TIMEOUT</code> (hit the time limit) or <code>OUT_OF_MEMORY</code> (increase <code>--mem</code>). <strong>MaxRSS</strong> is the most memory it used, which helps you request the right amount next time.</p>
+          <h4>Find out why a job is still waiting</h4>
+          <div class="code" data-where="server" data-cheat="Show the details of a job" data-keywords="scontrol show job pending reason details"><pre><code>scontrol show job <var>&lt;job_id&gt;</var></code></pre></div>
+          <p>Look at <code>Reason=</code>: <code>Resources</code> means it's waiting for a free GPU, <code>Priority</code> means other jobs are ahead of it.</p>
+          <h4>Check the server and GPUs</h4>
+          <div class="code" data-where="server" data-cheat="Show the state of the server's nodes" data-keywords="sinfo nodes partition idle busy"><pre><code>sinfo</code></pre></div>
+          <div class="code" data-where="server" data-cheat="Show GPU usage and memory" data-keywords="nvidia-smi gpu usage memory utilization"><pre><code>nvidia-smi</code></pre></div>
+          <p><code>sinfo</code> shows whether nodes are <code>idle</code>, <code>mix</code> (partly used) or <code>alloc</code> (full). <code>nvidia-smi</code> shows each GPU's memory use and load.</p>
           <div class="callout callout--note" role="note">
             <svg class="icon callout__icon" aria-hidden="true" focusable="false"><use href="#i-info"/></svg>
             <p><strong>Note:</strong> Always confirm job parameters and resource requests as appropriate for your cluster's policies to avoid overloading shared resources.</p>
           </div>
+          <p>Ready for real workloads? See the <a href="#examples">worked examples</a>: training with PyTorch and TensorFlow, job arrays, multiple GPUs and Hugging Face models.</p>
           <p class="done js-only">
-            <label class="check"><input type="checkbox" data-done="step-5"> <span>I've finished step 5</span></label>
+            <label class="check"><input type="checkbox" data-done="step-6"> <span>I've finished step 6</span></label>
           </p>
         </section>
       </section>
@@ -579,11 +624,11 @@ jupyter notebook --no-browser --ip=127.0.0.1 --port=<var data-var="jport">PORT</
           <li id="jupyter-tunnel" class="jstep">
             <h3 class="jstep__title">Open an SSH tunnel from your computer</h3>
             <p>In a <strong>new terminal on your own computer</strong>, not on the server, run:</p>
-            <div class="code" data-where="local" data-cheat="Open the SSH tunnel for Jupyter" data-keywords="jupyter tunnel port forward ssh"><pre><code>ssh -N -L <var data-var="jport">PORT</var>:127.0.0.1:<var data-var="jport">PORT</var> <var data-var="username">username</var>@<var data-var="hostname">hostname</var></code></pre></div>
+            <div class="code" data-where="local" data-cheat="Open the SSH tunnel for Jupyter" data-keywords="jupyter tunnel port forward ssh"><pre><code>ssh -N -L <var data-var="jport">PORT</var>:127.0.0.1:<var data-var="jport">PORT</var> -p <var data-var="sshport">port</var> <var data-var="username">username</var>@<var data-var="hostname">hostname</var></code></pre></div>
             <p>Enter your password. After that the window shows nothing, which is normal. Keep it open while you use Jupyter, and press <kbd>Ctrl</kbd> <kbd>C</kbd> to close the tunnel.</p>
             <details class="explain">
               <summary>What do <code>-N</code> and <code>-L</code> do?</summary>
-              <p><code>-L <var data-var="jport">PORT</var>:127.0.0.1:<var data-var="jport">PORT</var></code> forwards that port on your computer to the same port on the server, where Jupyter is listening. <code>-N</code> tells SSH not to open a shell, so it only keeps the tunnel open.</p>
+              <p><code>-L <var data-var="jport">PORT</var>:127.0.0.1:<var data-var="jport">PORT</var></code> forwards that port on your computer to the same port on the server, where Jupyter is listening. <code>-N</code> tells SSH not to open a shell, so it only keeps the tunnel open. <code>-p <var data-var="sshport">port</var></code> is the server's SSH port, the same one you log in with; it is not your Jupyter port.</p>
             </details>
           </li>
 
@@ -623,6 +668,664 @@ jupyter notebook --no-browser --ip=127.0.0.1 --port=<var data-var="jport">PORT</
         </details>
       </section>
       <!-- END JUPYTER ======================================================================= -->
+
+      <!-- BEGIN EXAMPLES ==================================================================
+           Worked examples. The scripts below are plain text inside <pre><code>; keep
+           "<", ">" and "&" escaped as &lt; &gt; &amp;.
+
+           ADMIN: Please check these assumptions before announcing the examples:
+             1. Jobs can reach the internet (MNIST, CIFAR-10 and Hugging Face models are
+                downloaded the first time a job runs).
+             2. --cpus-per-task is accepted, and 2 GPUs can be requested for Example 7.
+             3. Home directories have room for conda environments and the Hugging Face
+                cache (several GB).
+      ===================================================================================== -->
+      <section id="examples" class="section" data-label="Examples" aria-labelledby="examples-title">
+        <h2 id="examples-title">Worked Examples</h2>
+        <p class="section__lead">Complete, copy-and-run examples for common GPU tasks. Each one has a Python script and a job script: download both (or create them with <code>vim</code>), put them in the same folder on the server, and submit the job script with <code>sbatch</code>.</p>
+
+        <div class="method-picker">
+          <a class="method-card" href="#ex-gpu">
+            <span class="method-card__title">1 · Check your GPU</span>
+            <span class="method-card__text">A 1-minute first job that proves your code can see and use a GPU.</span>
+          </a>
+          <a class="method-card" href="#ex-conda">
+            <span class="method-card__title">2 · Your own conda environment</span>
+            <span class="method-card__text">Install extra Python packages with conda and pip, and use them in jobs.</span>
+          </a>
+          <a class="method-card" href="#ex-pytorch">
+            <span class="method-card__title">3 · Train a model with PyTorch</span>
+            <span class="method-card__text">Train a CNN on handwritten digits (MNIST) and save the model.</span>
+          </a>
+          <a class="method-card" href="#ex-tensorflow">
+            <span class="method-card__title">4 · Train a model with TensorFlow</span>
+            <span class="method-card__text">The same task with Keras.</span>
+          </a>
+          <a class="method-card" href="#ex-resume">
+            <span class="method-card__title">5 · Checkpoint and resume</span>
+            <span class="method-card__text">Long training that survives the time limit: resubmit and it carries on.</span>
+          </a>
+          <a class="method-card" href="#ex-array">
+            <span class="method-card__title">6 · Hyperparameter sweep</span>
+            <span class="method-card__text">Try several learning rates at once with a Slurm job array.</span>
+          </a>
+          <a class="method-card" href="#ex-ddp">
+            <span class="method-card__title">7 · Use multiple GPUs</span>
+            <span class="method-card__text">Split training across 2 GPUs with PyTorch DDP and <code>torchrun</code>.</span>
+          </a>
+          <a class="method-card" href="#ex-hf">
+            <span class="method-card__title">8 · Hugging Face models</span>
+            <span class="method-card__text">Run a small LLM, and fine-tune DistilBERT on movie reviews.</span>
+          </a>
+        </div>
+
+        <div class="callout callout--note" role="note">
+          <svg class="icon callout__icon" aria-hidden="true" focusable="false"><use href="#i-info"/></svg>
+          <p><strong>Keep your projects tidy:</strong> give each example its own folder, e.g. <code>mkdir -p ~/examples/mnist</code> then <code>cd ~/examples/mnist</code>, and run <code>sbatch</code> from inside it. Output files and downloaded data then stay together.</p>
+        </div>
+
+        <section id="ex-gpu" class="method" data-label="Example 1" aria-labelledby="ex-gpu-title">
+          <h3 id="ex-gpu-title">Example 1: Check your GPU</h3>
+          <p>Run this first. It shows which GPU Slurm gave your job and runs a quick calculation on it.</p>
+          <div class="code" data-where="server" data-title="check_gpu.py" data-download="check_gpu.py"><pre><code>"""Quick check that your job can see and use a GPU."""
+import torch
+
+print("PyTorch version:", torch.__version__)
+print("CUDA available: ", torch.cuda.is_available())
+
+if torch.cuda.is_available():
+    print("GPU count:      ", torch.cuda.device_count())
+    for i in range(torch.cuda.device_count()):
+        print(f"  GPU {i}: {torch.cuda.get_device_name(i)}")
+    <span class="tok-comment"># Multiply two large matrices on the GPU to prove it really works</span>
+    x = torch.rand(4096, 4096, device="cuda")
+    y = x @ x
+    torch.cuda.synchronize()
+    print("Matrix multiply on the GPU: OK")
+else:
+    print("No GPU visible. Did you request one with --gres=gpu:1?")</code></pre></div>
+          <div class="code" data-where="server" data-title="check_gpu.sh" data-download="check_gpu.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=check_gpu</span>          <span class="tok-comment"># Job name</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=check_gpu_%j.txt</span>     <span class="tok-comment"># Output file name with job ID</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--gres=gpu:1</span>                  <span class="tok-comment"># Number of GPUs</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--time=00:05:00</span>               <span class="tok-comment"># Time limit (5 min)</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--mem=2G</span>                      <span class="tok-comment"># Memory (2 GB)</span>
+
+<span class="tok-comment"># Load necessary modules</span>
+module load anaconda
+
+<span class="tok-comment"># Show the GPU Slurm gave this job, then test it from Python</span>
+nvidia-smi
+python check_gpu.py</code></pre></div>
+          <p>Submit it, wait for it to leave the queue, then read the result:</p>
+          <div class="code" data-where="server" data-cheat="Run the GPU check example" data-keywords="example gpu test cuda check nvidia"><pre><code>sbatch check_gpu.sh</code></pre></div>
+          <div class="code" data-where="server"><pre><code>cat check_gpu_<var>&lt;job_id&gt;</var>.txt</code></pre></div>
+          <p>Or run the same check interactively, without a job script:</p>
+          <div class="code" data-where="server"><pre><code>srun --gres=gpu:1 --time=00:05:00 --mem=2G python check_gpu.py</code></pre></div>
+          <p>You should see something like this (the GPU name depends on the server):</p>
+          <div class="code" data-where="server" data-title="Example output" data-copy="false"><pre><code>PyTorch version: 2.x.x
+CUDA available:  True
+GPU count:       1
+  GPU 0: NVIDIA …
+Matrix multiply on the GPU: OK</code></pre></div>
+          <p class="tip">If it says <samp>CUDA available: False</samp>, check that your job script has the <code>--gres=gpu:1</code> line.</p>
+        </section>
+
+        <section id="ex-conda" class="method" data-label="Example 2" aria-labelledby="ex-conda-title">
+          <h3 id="ex-conda-title">Example 2: Create your own conda environment</h3>
+          <p>The Anaconda module already includes PyTorch and TensorFlow, which is enough for Examples 1 and 3–7. When you need other packages (for example Hugging Face in Example 8) or specific versions, create your own environment. You only do this once, from your normal login shell.</p>
+          <ol class="steps-list">
+            <li>
+              <p>Load Anaconda and create an environment called <code>myenv</code>:</p>
+              <div class="code" data-where="server" data-cheat="Create your own conda environment" data-keywords="conda create environment env python"><pre><code>module load anaconda
+conda create -n myenv python=3.11 -y</code></pre></div>
+            </li>
+            <li>
+              <p>Activate it:</p>
+              <div class="code" data-where="server" data-cheat="Activate your conda environment" data-keywords="conda activate environment env"><pre><code>eval "$(conda shell.bash hook)"
+conda activate myenv</code></pre></div>
+              <p>Your prompt now starts with <code>(myenv)</code>. The first line sets up the <code>conda activate</code> command, so it works without running <code>conda init</code>.</p>
+            </li>
+            <li>
+              <p>Install packages with <code>pip</code>. For example, PyTorch plus the Hugging Face libraries used in Example 8:</p>
+              <div class="code" data-where="server" data-cheat="Install Python packages into your environment" data-keywords="pip install packages torch transformers huggingface"><pre><code>pip install torch torchvision
+pip install transformers datasets accelerate</code></pre></div>
+            </li>
+            <li>
+              <p>Check that it works on a GPU:</p>
+              <div class="code" data-where="server"><pre><code>srun --gres=gpu:1 --time=00:05:00 --mem=2G python -c "import torch; print(torch.cuda.is_available())"</code></pre></div>
+              <p>It should print <samp>True</samp>.</p>
+            </li>
+          </ol>
+          <p>To use the environment in a job, add these lines after <code>module load anaconda</code> in your job script:</p>
+          <div class="code" data-where="server" data-title="In your job script"><pre><code>module load anaconda
+eval "$(conda shell.bash hook)"
+conda activate myenv</code></pre></div>
+          <details class="explain">
+            <summary>Other useful conda commands</summary>
+            <ul>
+              <li><code>conda env list</code> lists your environments.</li>
+              <li><code>pip list</code> shows the packages in the active environment.</li>
+              <li><code>conda deactivate</code> leaves the environment.</li>
+              <li><code>conda env remove -n myenv</code> deletes an environment you no longer need, which frees a lot of disk space.</li>
+            </ul>
+          </details>
+          <p class="tip">Install packages from the login shell, not inside a job script. Installing in every job is slow, and two jobs installing at the same time can break the environment.</p>
+        </section>
+
+        <section id="ex-pytorch" class="method" data-label="Example 3" aria-labelledby="ex-pytorch-title">
+          <h3 id="ex-pytorch-title">Example 3: Train an image classifier with PyTorch</h3>
+          <p>Trains a small convolutional neural network to recognise handwritten digits (MNIST). It takes a few minutes on a GPU and reaches about 99% accuracy.</p>
+          <div class="code" data-where="server" data-title="train_mnist.py" data-download="train_mnist.py"><pre><code>"""Train a small CNN on MNIST handwritten digits with PyTorch."""
+import argparse
+import time
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--epochs", type=int, default=3)
+parser.add_argument("--lr", type=float, default=1e-3)
+parser.add_argument("--batch-size", type=int, default=128)
+parser.add_argument("--save", default="mnist_cnn.pt")
+args = parser.parse_args()
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device} (lr={args.lr}, epochs={args.epochs})")
+
+<span class="tok-comment"># Downloads MNIST into ./data the first time, then reuses it</span>
+transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
+train_set = datasets.MNIST("data", train=True, download=True, transform=transform)
+test_set = datasets.MNIST("data", train=False, download=True, transform=transform)
+train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True)
+test_loader = DataLoader(test_set, batch_size=1000, num_workers=4)
+
+model = nn.Sequential(
+    nn.Conv2d(1, 32, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
+    nn.Conv2d(32, 64, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
+    nn.Flatten(), nn.Linear(64 * 7 * 7, 128), nn.ReLU(), nn.Linear(128, 10),
+).to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+
+
+def evaluate():
+    model.eval()
+    correct = 0
+    with torch.no_grad():
+        for images, labels in test_loader:
+            images, labels = images.to(device), labels.to(device)
+            correct += (model(images).argmax(1) == labels).sum().item()
+    return 100.0 * correct / len(test_set)
+
+
+for epoch in range(1, args.epochs + 1):
+    model.train()
+    start, total_loss = time.time(), 0.0
+    for images, labels in train_loader:
+        images, labels = images.to(device), labels.to(device)
+        optimizer.zero_grad()
+        loss = F.cross_entropy(model(images), labels)
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item()
+    print(f"Epoch {epoch}: loss {total_loss / len(train_loader):.4f}, "
+          f"test accuracy {evaluate():.2f}%, {time.time() - start:.1f}s")
+
+print(f"Test accuracy: {evaluate():.2f}% (lr={args.lr})")
+torch.save(model.state_dict(), args.save)
+print(f"Saved model to {args.save}")</code></pre></div>
+          <div class="code" data-where="server" data-title="train_mnist.sh" data-download="train_mnist.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=mnist</span>              <span class="tok-comment"># Job name</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=output_%j.txt</span>        <span class="tok-comment"># Output file name with job ID</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--error=error_%j.txt</span>          <span class="tok-comment"># Error file name with job ID</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--gres=gpu:1</span>                  <span class="tok-comment"># Number of GPUs</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--cpus-per-task=4</span>             <span class="tok-comment"># CPU cores for loading data</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--mem=4G</span>                      <span class="tok-comment"># Memory (4 GB)</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--time=00:30:00</span>               <span class="tok-comment"># Time limit (30 min)</span>
+
+<span class="tok-comment"># Load necessary modules</span>
+module load anaconda
+
+<span class="tok-comment"># -u prints output straight away, so you can follow it with tail -f</span>
+python -u train_mnist.py --epochs 3</code></pre></div>
+          <p>Submit it:</p>
+          <div class="code" data-where="server" data-cheat="Run the PyTorch MNIST example" data-keywords="example pytorch train mnist cnn"><pre><code>sbatch train_mnist.sh</code></pre></div>
+          <p>Follow the training while it runs (press <kbd>Ctrl</kbd> <kbd>C</kbd> to stop watching; the job keeps running):</p>
+          <div class="code" data-where="server"><pre><code>tail -f output_<var>&lt;job_id&gt;</var>.txt</code></pre></div>
+          <div class="code" data-where="server" data-title="Example output" data-copy="false"><pre><code>Using device: cuda (lr=0.001, epochs=3)
+Epoch 1: loss 0.1874, test accuracy 98.32%, 9.8s
+Epoch 2: loss 0.0491, test accuracy 98.85%, 7.1s
+Epoch 3: loss 0.0335, test accuracy 98.97%, 7.0s
+Test accuracy: 98.97% (lr=0.001)
+Saved model to mnist_cnn.pt</code></pre></div>
+          <details class="explain">
+            <summary>What's happening?</summary>
+            <ul>
+              <li><code>torch.device("cuda" …)</code> picks the GPU when the job has one. The model and every batch of images are moved to it with <code>.to(device)</code>.</li>
+              <li><code>--cpus-per-task=4</code> matches <code>num_workers=4</code>: four CPU cores prepare the next batches while the GPU trains on the current one.</li>
+              <li><code>python -u</code> turns off output buffering, so each epoch appears in the output file straight away instead of at the end.</li>
+              <li>Warnings and errors go to <code>error_<var>&lt;job_id&gt;</var>.txt</code>. If the output file is empty or stops early, look there first.</li>
+              <li>To try different settings without editing the script, change the last line of the job script, e.g. <code>python -u train_mnist.py --epochs 5 --lr 0.0005</code>.</li>
+            </ul>
+          </details>
+        </section>
+
+        <section id="ex-tensorflow" class="method" data-label="Example 4" aria-labelledby="ex-tensorflow-title">
+          <h3 id="ex-tensorflow-title">Example 4: The same model with TensorFlow / Keras</h3>
+          <p>If your course uses TensorFlow, this does the same as Example 3 with Keras.</p>
+          <div class="code" data-where="server" data-title="train_mnist_tf.py" data-download="train_mnist_tf.py"><pre><code>"""Train a small CNN on MNIST handwritten digits with TensorFlow / Keras."""
+import tensorflow as tf
+
+<span class="tok-comment"># Take GPU memory as needed instead of all of it at once (the GPU is shared)</span>
+for gpu in tf.config.list_physical_devices("GPU"):
+    tf.config.experimental.set_memory_growth(gpu, True)
+
+print("TensorFlow version:", tf.__version__)
+print("GPUs visible:", tf.config.list_physical_devices("GPU"))
+
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+x_train = x_train[..., None].astype("float32") / 255.0
+x_test = x_test[..., None].astype("float32") / 255.0
+
+model = tf.keras.Sequential([
+    tf.keras.Input(shape=(28, 28, 1)),
+    tf.keras.layers.Conv2D(32, 3, activation="relu"),
+    tf.keras.layers.MaxPooling2D(),
+    tf.keras.layers.Conv2D(64, 3, activation="relu"),
+    tf.keras.layers.MaxPooling2D(),
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(128, activation="relu"),
+    tf.keras.layers.Dense(10),
+])
+model.compile(
+    optimizer="adam",
+    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+    metrics=["accuracy"],
+)
+
+<span class="tok-comment"># verbose=2 prints one line per epoch, which reads better in a log file than a progress bar</span>
+model.fit(x_train, y_train, epochs=3, batch_size=128, validation_split=0.1, verbose=2)
+
+loss, acc = model.evaluate(x_test, y_test, verbose=0)
+print(f"Test accuracy: {100 * acc:.2f}%")
+model.save("mnist_cnn.keras")
+print("Saved model to mnist_cnn.keras")</code></pre></div>
+          <div class="code" data-where="server" data-title="train_mnist_tf.sh" data-download="train_mnist_tf.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=mnist_tf</span>           <span class="tok-comment"># Job name</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=output_%j.txt</span>        <span class="tok-comment"># Output file name with job ID</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--error=error_%j.txt</span>          <span class="tok-comment"># Error file name with job ID</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--gres=gpu:1</span>                  <span class="tok-comment"># Number of GPUs</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--cpus-per-task=4</span>             <span class="tok-comment"># CPU cores</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--mem=4G</span>                      <span class="tok-comment"># Memory (4 GB)</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--time=00:30:00</span>               <span class="tok-comment"># Time limit (30 min)</span>
+
+<span class="tok-comment"># Load necessary modules</span>
+module load anaconda
+
+python -u train_mnist_tf.py</code></pre></div>
+          <div class="code" data-where="server" data-cheat="Run the TensorFlow MNIST example" data-keywords="example tensorflow keras train mnist"><pre><code>sbatch train_mnist_tf.sh</code></pre></div>
+          <p class="tip">TensorFlow prints many informational messages to the error file. They're normal. Check that the output file shows <samp>GPUs visible: [PhysicalDevice(name='/physical_device:GPU:0', device_type='GPU')]</samp>; an empty list <samp>[]</samp> means TensorFlow isn't using the GPU.</p>
+        </section>
+
+        <section id="ex-resume" class="method" data-label="Example 5" aria-labelledby="ex-resume-title">
+          <h3 id="ex-resume-title">Example 5: Checkpoint and resume long training</h3>
+          <p>Every job has a time limit, and maintenance or errors can stop a job early. Save a checkpoint regularly and your script can pick up where it stopped instead of starting over. This example trains ResNet-18 on CIFAR-10 for 30 epochs, which may not fit in one 1-hour job.</p>
+          <div class="code" data-where="server" data-title="train_resume.py" data-download="train_resume.py"><pre><code>"""Train ResNet-18 on CIFAR-10 and save a checkpoint after every epoch.
+If the job runs out of time, submit it again and it carries on where it stopped."""
+import argparse
+import os
+import time
+
+import torch
+import torch.nn.functional as F
+from torch.utils.data import DataLoader
+from torchvision import datasets, models, transforms
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--epochs", type=int, default=30)
+parser.add_argument("--checkpoint", default="checkpoint.pt")
+args = parser.parse_args()
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+norm = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))
+train_tf = transforms.Compose([transforms.RandomCrop(32, padding=4), transforms.RandomHorizontalFlip(),
+                               transforms.ToTensor(), norm])
+test_tf = transforms.Compose([transforms.ToTensor(), norm])
+train_set = datasets.CIFAR10("data", train=True, download=True, transform=train_tf)
+test_set = datasets.CIFAR10("data", train=False, download=True, transform=test_tf)
+train_loader = DataLoader(train_set, batch_size=128, shuffle=True, num_workers=4, pin_memory=True)
+test_loader = DataLoader(test_set, batch_size=1000, num_workers=4)
+
+model = models.resnet18(num_classes=10).to(device)
+optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
+
+<span class="tok-comment"># Resume if a checkpoint from an earlier job exists</span>
+start_epoch = 1
+if os.path.exists(args.checkpoint):
+    ckpt = torch.load(args.checkpoint, map_location=device)
+    model.load_state_dict(ckpt["model"])
+    optimizer.load_state_dict(ckpt["optimizer"])
+    scheduler.load_state_dict(ckpt["scheduler"])
+    start_epoch = ckpt["epoch"] + 1
+    print(f"Resumed from {args.checkpoint}, continuing at epoch {start_epoch}")
+
+
+def evaluate():
+    model.eval()
+    correct = 0
+    with torch.no_grad():
+        for images, labels in test_loader:
+            images, labels = images.to(device), labels.to(device)
+            correct += (model(images).argmax(1) == labels).sum().item()
+    return 100.0 * correct / len(test_set)
+
+
+for epoch in range(start_epoch, args.epochs + 1):
+    model.train()
+    start = time.time()
+    for images, labels in train_loader:
+        images, labels = images.to(device), labels.to(device)
+        optimizer.zero_grad()
+        F.cross_entropy(model(images), labels).backward()
+        optimizer.step()
+    scheduler.step()
+
+    <span class="tok-comment"># Save to a temporary file first, so a job stopped mid-save never leaves a broken checkpoint</span>
+    state = {"model": model.state_dict(), "optimizer": optimizer.state_dict(),
+             "scheduler": scheduler.state_dict(), "epoch": epoch}
+    torch.save(state, args.checkpoint + ".tmp")
+    os.replace(args.checkpoint + ".tmp", args.checkpoint)
+    print(f"Epoch {epoch}/{args.epochs}: test accuracy {evaluate():.2f}%, "
+          f"{time.time() - start:.1f}s, checkpoint saved")
+
+print("Training complete.")</code></pre></div>
+          <div class="code" data-where="server" data-title="train_resume.sh" data-download="train_resume.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=cifar_resume</span>       <span class="tok-comment"># Job name</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=output_%j.txt</span>        <span class="tok-comment"># Output file name with job ID</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--error=error_%j.txt</span>          <span class="tok-comment"># Error file name with job ID</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--gres=gpu:1</span>                  <span class="tok-comment"># Number of GPUs</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--cpus-per-task=4</span>             <span class="tok-comment"># CPU cores for loading data</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--mem=8G</span>                      <span class="tok-comment"># Memory (8 GB)</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--time=01:00:00</span>               <span class="tok-comment"># Time limit (1 h)</span>
+
+<span class="tok-comment"># Load necessary modules</span>
+module load anaconda
+
+python -u train_resume.py --epochs 30</code></pre></div>
+          <div class="code" data-where="server" data-cheat="Run the checkpoint and resume example" data-keywords="example checkpoint resume cifar resnet long"><pre><code>sbatch train_resume.sh</code></pre></div>
+          <p>If the time limit is reached before epoch 30, Slurm stops the job. Check what happened:</p>
+          <div class="code" data-where="server"><pre><code>sacct -j <var>&lt;job_id&gt;</var> --format=JobID,JobName,State,Elapsed</code></pre></div>
+          <p>A <samp>TIMEOUT</samp> state means it ran out of time. Submit the same script again; it finds <code>checkpoint.pt</code> and continues:</p>
+          <div class="code" data-where="server" data-title="Example output (second job)" data-copy="false"><pre><code>Resumed from checkpoint.pt, continuing at epoch 19
+Epoch 19/30: test accuracy 86.41%, 98.3s, checkpoint saved
+…</code></pre></div>
+          <p class="tip">To start again from scratch, delete the checkpoint first: <code>rm checkpoint.pt</code>.</p>
+        </section>
+
+        <section id="ex-array" class="method" data-label="Example 6" aria-labelledby="ex-array-title">
+          <h3 id="ex-array-title">Example 6: Hyperparameter sweep with a job array</h3>
+          <p>A job array submits several copies of one job script with a single <code>sbatch</code>. Each copy (a <em>task</em>) gets its own number in <code>$SLURM_ARRAY_TASK_ID</code>, which the script uses to pick a different setting. This one trains the model from Example 3 with four learning rates.</p>
+          <p>Put <code>sweep.sh</code> in the same folder as <code>train_mnist.py</code> from Example 3:</p>
+          <div class="code" data-where="server" data-title="sweep.sh" data-download="sweep.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=lr_sweep</span>           <span class="tok-comment"># Job name</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=sweep_%A_%a.txt</span>      <span class="tok-comment"># %A = array job ID, %a = task number</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--array=0-3%2</span>                 <span class="tok-comment"># Tasks 0 to 3, at most 2 running at once</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--gres=gpu:1</span>                  <span class="tok-comment"># GPUs per task</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--cpus-per-task=4</span>             <span class="tok-comment"># CPU cores per task</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--mem=4G</span>                      <span class="tok-comment"># Memory per task</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--time=00:30:00</span>               <span class="tok-comment"># Time limit per task</span>
+
+<span class="tok-comment"># Load necessary modules</span>
+module load anaconda
+
+<span class="tok-comment"># Each task picks its own learning rate from this list</span>
+LRS=(0.1 0.01 0.001 0.0001)
+LR=${LRS[$SLURM_ARRAY_TASK_ID]}
+echo "Task $SLURM_ARRAY_TASK_ID: learning rate $LR"
+
+python -u train_mnist.py --lr "$LR" --epochs 3 --save "mnist_lr_$LR.pt"</code></pre></div>
+          <div class="code" data-where="server" data-cheat="Submit a job array (hyperparameter sweep)" data-keywords="example array sweep hyperparameter learning rate"><pre><code>sbatch sweep.sh</code></pre></div>
+          <p><code>squeue</code> shows the tasks as <code><var>&lt;job_id&gt;</var>_0</code>, <code><var>&lt;job_id&gt;</var>_1</code> and so on; waiting ones are grouped as <code><var>&lt;job_id&gt;</var>_[2-3%2]</code>. When they have finished, compare the results:</p>
+          <div class="code" data-where="server" data-cheat="Compare the results of a sweep" data-keywords="grep results accuracy array sweep"><pre><code>grep "Test accuracy" sweep_*.txt</code></pre></div>
+          <div class="code" data-where="server" data-title="Example output" data-copy="false"><pre><code>sweep_4250_0.txt:Test accuracy: 11.35% (lr=0.1)
+sweep_4250_1.txt:Test accuracy: 98.12% (lr=0.01)
+sweep_4250_2.txt:Test accuracy: 98.97% (lr=0.001)
+sweep_4250_3.txt:Test accuracy: 97.64% (lr=0.0001)</code></pre></div>
+          <details class="explain">
+            <summary>What's happening?</summary>
+            <ul>
+              <li><code>--array=0-3%2</code> creates tasks 0, 1, 2 and 3. The <code>%2</code> lets at most 2 run at the same time, so your sweep doesn't take every GPU. Please keep a limit like this.</li>
+              <li><code>%A</code> and <code>%a</code> in <code>--output</code> become the array's job ID and the task number, so every task writes its own file.</li>
+              <li>Each task saves its own model (<code>--save "mnist_lr_$LR.pt"</code>) so they don't overwrite each other.</li>
+              <li>Cancel one task with <code>scancel <var>&lt;job_id&gt;</var>_2</code>, or the whole array with <code>scancel <var>&lt;job_id&gt;</var></code>.</li>
+            </ul>
+          </details>
+          <p class="tip">Run Example 3 once before the sweep so MNIST is already downloaded. Otherwise two tasks may try to download it into <code>data</code> at the same time.</p>
+        </section>
+
+        <section id="ex-ddp" class="method" data-label="Example 7" aria-labelledby="ex-ddp-title">
+          <h3 id="ex-ddp-title">Example 7: Use multiple GPUs with PyTorch DDP</h3>
+          <p>DistributedDataParallel (DDP) runs one copy of your training script per GPU. Each copy trains on a different part of every epoch's data, and the GPUs average their gradients after each step, so an epoch takes roughly half the time on 2 GPUs.</p>
+          <div class="callout callout--warn" role="note">
+            <svg class="icon callout__icon" aria-hidden="true" focusable="false"><use href="#i-alert-triangle"/></svg>
+            <p>GPUs are shared. Only use more than one if your single-GPU job is too slow, and check with <code>sinfo</code> and <code>squeue</code> that GPUs are free. A 2-GPU job also waits until 2 GPUs are free at the same time.</p>
+          </div>
+          <div class="code" data-where="server" data-title="ddp_train.py" data-download="ddp_train.py"><pre><code>"""Train ResNet-18 on CIFAR-10 on several GPUs at once with DistributedDataParallel (DDP).
+Start it with torchrun, which runs one copy of this script per GPU."""
+import os
+import time
+
+import torch
+import torch.distributed as dist
+import torch.nn.functional as F
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
+from torchvision import datasets, models, transforms
+
+dist.init_process_group("nccl")
+rank = dist.get_rank()
+world_size = dist.get_world_size()
+local_rank = int(os.environ["LOCAL_RANK"])
+torch.cuda.set_device(local_rank)
+device = torch.device("cuda", local_rank)
+
+
+def log(message):
+    if rank == 0:  <span class="tok-comment"># print once, not once per GPU</span>
+        print(message, flush=True)
+
+
+log(f"Training on {world_size} GPUs")
+
+<span class="tok-comment"># Only the first process downloads; the others wait here until it has finished</span>
+if rank == 0:
+    datasets.CIFAR10("data", train=True, download=True)
+dist.barrier()
+
+transform = transforms.Compose([
+    transforms.RandomCrop(32, padding=4), transforms.RandomHorizontalFlip(), transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616)),
+])
+train_set = datasets.CIFAR10("data", train=True, transform=transform)
+sampler = DistributedSampler(train_set)  <span class="tok-comment"># gives each GPU a different part of the data</span>
+loader = DataLoader(train_set, batch_size=128, sampler=sampler, num_workers=4, pin_memory=True)
+
+model = DDP(models.resnet18(num_classes=10).to(device), device_ids=[local_rank])
+optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
+
+for epoch in range(1, 11):
+    sampler.set_epoch(epoch)  <span class="tok-comment"># shuffle differently every epoch</span>
+    model.train()
+    start, total_loss = time.time(), 0.0
+    for images, labels in loader:
+        images, labels = images.to(device), labels.to(device)
+        optimizer.zero_grad()
+        loss = F.cross_entropy(model(images), labels)
+        loss.backward()  <span class="tok-comment"># DDP averages the gradients across all GPUs here</span>
+        optimizer.step()
+        total_loss += loss.item()
+    log(f"Epoch {epoch}: loss {total_loss / len(loader):.4f}, {time.time() - start:.1f}s")
+
+if rank == 0:
+    torch.save(model.module.state_dict(), "cifar_resnet18_ddp.pt")
+    log("Saved model to cifar_resnet18_ddp.pt")
+dist.destroy_process_group()</code></pre></div>
+          <div class="code" data-where="server" data-title="ddp_train.sh" data-download="ddp_train.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=ddp</span>                <span class="tok-comment"># Job name</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=output_%j.txt</span>        <span class="tok-comment"># Output file name with job ID</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--error=error_%j.txt</span>          <span class="tok-comment"># Error file name with job ID</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--gres=gpu:2</span>                  <span class="tok-comment"># Number of GPUs</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--cpus-per-task=8</span>             <span class="tok-comment"># CPU cores (4 per GPU)</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--mem=16G</span>                     <span class="tok-comment"># Memory (16 GB)</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--time=01:00:00</span>               <span class="tok-comment"># Time limit (1 h)</span>
+
+<span class="tok-comment"># Load necessary modules</span>
+module load anaconda
+
+<span class="tok-comment"># --nproc_per_node must match the number of GPUs in --gres above</span>
+torchrun --standalone --nproc_per_node=2 ddp_train.py</code></pre></div>
+          <div class="code" data-where="server" data-cheat="Run the multi-GPU (DDP) example" data-keywords="example ddp multi gpu distributed torchrun"><pre><code>sbatch ddp_train.sh</code></pre></div>
+          <details class="explain">
+            <summary>What's different from single-GPU training?</summary>
+            <ul>
+              <li><code>torchrun</code> starts one process per GPU and gives each one a <code>LOCAL_RANK</code> (0, 1, …) that says which GPU to use.</li>
+              <li><code>DistributedSampler</code> splits the dataset between the processes, and <code>sampler.set_epoch(epoch)</code> reshuffles it every epoch.</li>
+              <li>The model is wrapped in <code>DDP(…)</code>, which keeps the copies in sync. To save it, use <code>model.module</code>, and only from rank 0.</li>
+              <li><code>batch_size=128</code> is per GPU, so 2 GPUs train on 256 images per step. If accuracy drops, try a slightly higher learning rate or fewer GPUs.</li>
+              <li>To compare, change both <code>--gres=gpu:2</code> and <code>--nproc_per_node=2</code> to 1 and look at the time per epoch.</li>
+            </ul>
+          </details>
+        </section>
+
+        <section id="ex-hf" class="method" data-label="Example 8" aria-labelledby="ex-hf-title">
+          <h3 id="ex-hf-title">Example 8: Hugging Face models</h3>
+          <p>Both parts use the <code>myenv</code> environment from <a href="#ex-conda">Example 2</a>, with <code>transformers</code>, <code>datasets</code> and <code>accelerate</code> installed. Models and datasets are downloaded the first time and cached in <code>~/.cache/huggingface</code>.</p>
+
+          <h4 id="ex-hf-generate">8a · Run a small LLM</h4>
+          <p>Answers questions with <a href="https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct">Qwen2.5-0.5B-Instruct</a>, a small chat model that fits easily on one GPU.</p>
+          <div class="code" data-where="server" data-title="hf_generate.py" data-download="hf_generate.py"><pre><code>"""Answer questions with a small open LLM from the Hugging Face Hub."""
+from transformers import pipeline
+
+<span class="tok-comment"># Downloaded the first time (about 1 GB), then loaded from ~/.cache/huggingface</span>
+generator = pipeline(
+    "text-generation",
+    model="Qwen/Qwen2.5-0.5B-Instruct",
+    dtype="auto",
+    device_map="auto",  <span class="tok-comment"># puts the model on the GPU</span>
+)
+
+questions = [
+    "Explain what a GPU is to a first-year student in two sentences.",
+    "Give three tips for training a neural network faster.",
+]
+for question in questions:
+    messages = [{"role": "user", "content": question}]
+    result = generator(messages, max_new_tokens=200, do_sample=False)
+    print("Q:", question)
+    print("A:", result[0]["generated_text"][-1]["content"])
+    print("-" * 60)</code></pre></div>
+          <div class="code" data-where="server" data-title="hf_generate.sh" data-download="hf_generate.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=hf_generate</span>        <span class="tok-comment"># Job name</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=output_%j.txt</span>        <span class="tok-comment"># Output file name with job ID</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--error=error_%j.txt</span>          <span class="tok-comment"># Error file name with job ID</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--gres=gpu:1</span>                  <span class="tok-comment"># Number of GPUs</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--mem=8G</span>                      <span class="tok-comment"># Memory (8 GB)</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--time=00:20:00</span>               <span class="tok-comment"># Time limit (20 min)</span>
+
+<span class="tok-comment"># Load Anaconda and switch to your own environment</span>
+module load anaconda
+eval "$(conda shell.bash hook)"
+conda activate myenv
+
+python -u hf_generate.py</code></pre></div>
+          <div class="code" data-where="server" data-cheat="Run the Hugging Face LLM example" data-keywords="example huggingface llm generate text transformers qwen"><pre><code>sbatch hf_generate.sh</code></pre></div>
+          <p class="tip">Change <code>questions</code> to ask your own. Larger models give better answers but need more GPU memory: as a rough guide, about 2 GB per billion parameters.</p>
+
+          <h4 id="ex-hf-finetune">8b · Fine-tune a model on your own task</h4>
+          <p>Fine-tunes <a href="https://huggingface.co/distilbert/distilbert-base-uncased">DistilBERT</a> to label movie reviews from the IMDb dataset as positive or negative. It uses 2,000 reviews to keep the run to a few minutes, and reaches about 85–88% accuracy.</p>
+          <div class="code" data-where="server" data-title="hf_finetune.py" data-download="hf_finetune.py"><pre><code>"""Fine-tune DistilBERT to label movie reviews (IMDb) as positive or negative."""
+import numpy as np
+import torch
+from datasets import load_dataset
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, Trainer, TrainingArguments
+
+model_name = "distilbert/distilbert-base-uncased"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=2)
+
+<span class="tok-comment"># A small random sample keeps this example to a few minutes</span>
+imdb = load_dataset("stanfordnlp/imdb")
+train = imdb["train"].shuffle(seed=42).select(range(2000))
+test = imdb["test"].shuffle(seed=42).select(range(1000))
+
+
+def tokenize(batch):
+    return tokenizer(batch["text"], truncation=True, max_length=256, padding="max_length")
+
+
+train = train.map(tokenize, batched=True)
+test = test.map(tokenize, batched=True)
+
+
+def accuracy(eval_pred):
+    logits, labels = eval_pred
+    return {"accuracy": float((np.argmax(logits, axis=-1) == labels).mean())}
+
+
+training_args = TrainingArguments(
+    output_dir="distilbert-imdb",
+    num_train_epochs=2,
+    per_device_train_batch_size=16,
+    per_device_eval_batch_size=64,
+    learning_rate=2e-5,
+    eval_strategy="epoch",
+    save_strategy="no",
+    logging_steps=50,
+    fp16=torch.cuda.is_available(),  <span class="tok-comment"># faster mixed-precision training on the GPU</span>
+    report_to="none",
+    disable_tqdm=True,  <span class="tok-comment"># plain lines instead of progress bars in the log file</span>
+)
+trainer = Trainer(model=model, args=training_args, train_dataset=train, eval_dataset=test,
+                  compute_metrics=accuracy)
+trainer.train()
+print("Final evaluation:", trainer.evaluate())
+
+trainer.save_model("distilbert-imdb")
+tokenizer.save_pretrained("distilbert-imdb")
+print("Saved the fine-tuned model to distilbert-imdb/")</code></pre></div>
+          <div class="code" data-where="server" data-title="hf_finetune.sh" data-download="hf_finetune.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=hf_finetune</span>        <span class="tok-comment"># Job name</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=output_%j.txt</span>        <span class="tok-comment"># Output file name with job ID</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--error=error_%j.txt</span>          <span class="tok-comment"># Error file name with job ID</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--gres=gpu:1</span>                  <span class="tok-comment"># Number of GPUs</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--cpus-per-task=4</span>             <span class="tok-comment"># CPU cores</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--mem=16G</span>                     <span class="tok-comment"># Memory (16 GB)</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--time=01:00:00</span>               <span class="tok-comment"># Time limit (1 h)</span>
+
+<span class="tok-comment"># Load Anaconda and switch to your own environment</span>
+module load anaconda
+eval "$(conda shell.bash hook)"
+conda activate myenv
+
+python -u hf_finetune.py</code></pre></div>
+          <div class="code" data-where="server" data-cheat="Run the Hugging Face fine-tuning example" data-keywords="example huggingface fine-tune finetune distilbert imdb trainer"><pre><code>sbatch hf_finetune.sh</code></pre></div>
+          <p>The fine-tuned model is saved in <code>distilbert-imdb/</code>. Load it later with <code>AutoModelForSequenceClassification.from_pretrained("distilbert-imdb")</code>.</p>
+
+          <details class="explain">
+            <summary>Freeing disk space</summary>
+            <p>Downloaded models can be large. See how much space the cache uses, and delete models you no longer need:</p>
+            <div class="code" data-where="server" data-cheat="See how much space the Hugging Face cache uses" data-keywords="disk space du cache huggingface quota"><pre><code>du -sh ~/.cache/huggingface/hub/*</code></pre></div>
+            <div class="code" data-where="server" data-title="Example" data-copy="false"><pre><code>rm -rf ~/.cache/huggingface/hub/models--Qwen--Qwen2.5-0.5B-Instruct</code></pre></div>
+          </details>
+        </section>
+      </section>
+      <!-- END EXAMPLES ====================================================================== -->
 
       <section id="builder" class="section section--wide js-only" aria-labelledby="builder-title">
         <h2 id="builder-title">Job Script Builder</h2>

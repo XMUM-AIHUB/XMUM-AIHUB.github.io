@@ -42,8 +42,17 @@
   function isUser(s) { return typeof s === 'string' && USER_RE.test(s); }
   function isHost(s) { return typeof s === 'string' && HOST_RE.test(s); }
   function isPort(n) { return Number.isInteger(n) && n >= 1024 && n <= 65535; }
+  function isSshPort(s) { return typeof s === 'string' && /^\d{1,5}$/.test(s) && +s >= 1 && +s <= 65535; }
 
   function cleanUser(raw) { return String(raw == null ? '' : raw).trim(); }
+  function cleanPort(raw) { return String(raw == null ? '' : raw).trim().replace(/^0+(?=\d)/, ''); }
+
+  /** The port in "ssh -p 2222 …", "host:2222" or "ssh://host:2222", or '' */
+  function portFrom(raw) {
+    const s = String(raw == null ? '' : raw).trim();
+    const m = s.match(/(?:^|\s)-p\s*(\d+)(?:\s|$)/) || s.match(/^(?:[a-z][a-z0-9+.-]*:\/\/)?[^:\s\/]+:(\d+)(?:\/.*)?$/i);
+    return m ? cleanPort(m[1]) : '';
+  }
 
   /** "SSH://Server.Example.edu:22/path" → "server.example.edu" */
   function cleanHost(raw) {
@@ -54,12 +63,13 @@
     return s.toLowerCase();
   }
 
-  /** "alice@192.0.2.10" or "ssh alice@host" → { user, host }; otherwise null */
+  /** "alice@192.0.2.10", "ssh -p 2222 alice@host" or "alice@host:2222" → { user, host, port }; otherwise null */
   function splitUserHost(raw) {
-    const s = String(raw == null ? '' : raw).trim().replace(/^ssh\s+/i, '');
+    const port = portFrom(raw);
+    const s = String(raw == null ? '' : raw).trim().replace(/^ssh\s+/i, '').replace(/(?:^|\s)-p\s*\d+(?=\s|$)/, '').trim();
     const at = s.lastIndexOf('@');
     if (at <= 0 || at === s.length - 1) return null;
-    return { user: s.slice(0, at), host: s.slice(at + 1) };
+    return { user: s.slice(0, at), host: s.slice(at + 1), port };
   }
 
   function fnv1a32(str) {
@@ -405,19 +415,21 @@
   }
 
   /* =========================================================================
-   * Personalization: username, hostname (and the Jupyter port via a getter)
+   * Personalization: username, hostname, SSH port (and the Jupyter port via a getter)
    * ========================================================================= */
   const Vars = (() => {
-    const values = { username: '', hostname: '' };
+    const values = { username: '', hostname: '', sshport: '' };
     const getters = {};
-    const LABELS = { username: 'username', hostname: 'server address', jport: 'Jupyter port' };
+    const LABELS = { username: 'username', hostname: 'server address', sshport: 'SSH port', jport: 'Jupyter port' };
     let userIn = null;
     let hostIn = null;
+    let sshPortIn = null;
 
     function load() {
       const saved = store.get('vars', null);
       values.username = saved && isUser(saved.username) ? saved.username : '';
       values.hostname = saved && isHost(saved.hostname) ? saved.hostname : '';
+      values.sshport = saved && isSshPort(saved.sshport) ? saved.sshport : '';
     }
 
     function get(name) { return getters[name] ? getters[name]() : values[name] || ''; }
@@ -453,6 +465,10 @@
     }
 
     function check(input) {
+      if (input === sshPortIn) {
+        const port = cleanPort(input.value);
+        return !port || isSshPort(port) ? ['', ''] : ['Enter just the port number, between 1 and 65535, e.g. 22.', 'error'];
+      }
       const isUserField = input === userIn;
       const value = isUserField ? cleanUser(input.value) : cleanHost(input.value);
       if (!value) return ['', ''];
@@ -468,19 +484,25 @@
 
     function commit(source) {
       // A pasted "user@host" (or "ssh user@host") in either field fills both.
-      const pasted = source ? splitUserHost(source.value) : null;
+      // A port in it ("-p 2222" or "host:2222") fills the port field.
+      const pasted = source && source !== sshPortIn ? splitUserHost(source.value) : null;
+      const port = pasted ? pasted.port : source === hostIn ? portFrom(hostIn.value) : '';
       if (pasted) {
         userIn.value = cleanUser(pasted.user);
         hostIn.value = cleanHost(pasted.host);
       }
+      if (port) sshPortIn.value = port;
       const u = cleanUser(userIn.value);
       const h = cleanHost(hostIn.value);
+      const p = cleanPort(sshPortIn.value);
       values.username = isUser(u) ? u : '';
       values.hostname = isHost(h) ? h : '';
-      if (values.username || values.hostname) store.set('vars', { username: values.username, hostname: values.hostname });
-      else store.remove('vars');
+      values.sshport = isSshPort(p) ? p : '';
+      if (values.username || values.hostname || values.sshport) {
+        store.set('vars', { username: values.username, hostname: values.hostname, sshport: values.sshport });
+      } else store.remove('vars');
 
-      [userIn, hostIn].forEach((input) => {
+      [userIn, hostIn, sshPortIn].forEach((input) => {
         const [message] = check(input);
         if (!message) setMessage(input, '', '');
         else if (input === source && !pasted) showLater(input);
@@ -495,18 +517,20 @@
         if (jport) jport.focus();
         return;
       }
-      Nav.reveal(name === 'hostname' ? hostIn : userIn);
+      Nav.reveal(name === 'hostname' ? hostIn : name === 'sshport' ? sshPortIn : userIn);
     }
 
     function init() {
       userIn = $('[data-input="username"]');
       hostIn = $('[data-input="hostname"]');
+      sshPortIn = $('[data-input="sshport"]');
       load();
 
-      if (userIn && hostIn) {
+      if (userIn && hostIn && sshPortIn) {
         userIn.value = values.username;
         hostIn.value = values.hostname;
-        [userIn, hostIn].forEach((input) => {
+        sshPortIn.value = values.sshport;
+        [userIn, hostIn, sshPortIn].forEach((input) => {
           input.addEventListener('input', () => commit(input));
           input.addEventListener('blur', () => { showLater.cancel(); setMessage(input, ...check(input)); });
         });
@@ -516,6 +540,7 @@
           clear.addEventListener('click', () => {
             userIn.value = '';
             hostIn.value = '';
+            sshPortIn.value = '';
             commit(null);
             announce('Your details were cleared.');
             userIn.focus();
@@ -532,6 +557,7 @@
           load();
           if (document.activeElement !== userIn) userIn.value = values.username;
           if (document.activeElement !== hostIn) hostIn.value = values.hostname;
+          if (document.activeElement !== sshPortIn) sshPortIn.value = values.sshport;
           applyAll();
         });
       }
