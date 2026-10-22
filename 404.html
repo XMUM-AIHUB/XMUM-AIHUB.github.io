@@ -1,0 +1,66 @@
+<!doctype html>
+<!-- Self-contained on purpose: GitHub Pages serves this file at whatever URL was
+     missing, so relative links to assets/ would break. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="color-scheme" content="light dark">
+  <title>Page not found · XMUM AIHUB</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f6f7fb; --surface: #ffffff; --text: #101828; --muted: #475467;
+      --primary: #4338ca; --on-primary: #ffffff; --border: #dde2ec; --focus: #1d4ed8;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0a0f1c; --surface: #111827; --text: #e6eaf2; --muted: #a4adbf;
+        --primary: #a5b0ff; --on-primary: #0a0f1c; --border: #263049; --focus: #93c5fd;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 1.5rem;
+      background: var(--bg);
+      color: var(--text);
+      font: 1rem/1.6 system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", Arial, sans-serif;
+    }
+    main {
+      max-width: 32rem;
+      padding: 2.5rem 2rem;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--surface);
+      text-align: center;
+    }
+    .code { margin: 0 0 .5rem; font: 700 .8rem/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .16em; color: var(--primary); }
+    h1 { margin: 0 0 .75rem; font-size: 1.75rem; line-height: 1.2; }
+    p { margin: 0 0 1.5rem; color: var(--muted); }
+    a {
+      display: inline-block;
+      padding: .7rem 1.2rem;
+      border-radius: 10px;
+      background: var(--primary);
+      color: var(--on-primary);
+      font-weight: 650;
+      text-decoration: none;
+    }
+    a:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="code">404</p>
+    <h1>Page not found</h1>
+    <p>The page you were looking for doesn't exist. The guide to the AIT GPU Server is on the home page.</p>
+    <a href="/">Go to the AIT GPU Server guide</a>
+  </main>
+</body>
+</html>

@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!--
+    XMUM AIHUB – AIT GPU Server guide · https://xmum-aihub.github.io/
+    ==================================================================
+    How to edit (for admins)
+    This is a static site with no build step. Edit this file, commit to main, and GitHub
+    Pages republishes it in about a minute. Search for "ADMIN:" to find the parts you are
+    most likely to change: announcements, contact, GPU options, and the Jupyter section.
+
+    Code blocks
+      <div class="code" data-where="server" …><pre><code>command</code></pre></div>
+        data-where     required. "local" = run on your computer, "server" = run on the AIT server
+        data-title     optional label, e.g. a file name
+        data-copy      "false" = no copy button (use this for examples)
+        data-download  file name. Adds a Download button
+        data-cheat     description. Also lists the command in the cheat sheet
+        data-keywords  extra words for the cheat-sheet search
+      Put <pre><code> and </code></pre> right against the text, with no newlines inside.
+
+    Personalized values
+      <var data-var="username">username</var>   also "hostname" and "jport" (Jupyter port).
+      The text inside is what readers see before they fill in their details, or without JavaScript.
+      Placeholders that readers must replace themselves: <var>&lt;job_id&gt;</var>
+
+    After changing assets/css/site.css or assets/js/main.js, bump ?v=YYYYMMDD in <head>
+    so browsers fetch the new version.
+  -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AIT GPU Server · XMUM AIHUB</title>
+  <meta name="description" content="Rules and a step-by-step tutorial for the XMUM AIHUB AIT GPU Server: log in over SSH, load modules, and submit GPU jobs with Slurm.">
+  <link rel="canonical" href="https://xmum-aihub.github.io/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="XMUM AIHUB">
+  <meta property="og:title" content="XMUM AIHUB – AIT GPU Server">
+  <meta property="og:description" content="Rules and Tutorial on Remote Login, Module Loading, and Job Submission with Slurm.">
+  <meta property="og:url" content="https://xmum-aihub.github.io/">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f6f7fb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0f1c" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <script>
+    /* Theme bootstrap. Runs before first paint so there is no flash of the wrong theme:
+       marks the page as JS-enabled and applies a saved "light"/"dark" choice.
+       No saved choice = follow the system setting. */
+    (function (d) {
+      d.classList.add('js');
+      try {
+        var t = JSON.parse(localStorage.getItem('aihub:v1:theme'));
+        if (t === 'light' || t === 'dark') d.setAttribute('data-theme', t);
+      } catch (e) {}
+    })(document.documentElement);
+  </script>
+  <link rel="stylesheet" href="assets/css/site.css?v=20261022">
+  <script src="assets/js/main.js?v=20261022" defer></script>
+</head>
+<body>
+  <!-- Icon sprite (Feather icons, MIT licence). Use with <svg class="icon"><use href="#i-name"/></svg>. -->
+  <svg xmlns="http://www.w3.org/2000/svg" class="sprite" aria-hidden="true" focusable="false">
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+    <symbol id="i-github" viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 17.13V21"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+    <symbol id="i-user-check" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></symbol>
+    <symbol id="i-user-x" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+    <symbol id="i-book-open" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+    <symbol id="i-clipboard" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></symbol>
+    <symbol id="i-alert-triangle" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-check-circle" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
+    <symbol id="i-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></symbol>
+    <symbol id="i-shuffle" viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></symbol>
+    <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></symbol>
+  </svg>
+
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="brand" href="#top">
+        <svg class="brand__mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
+          <defs>
+            <linearGradient id="brand-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#4338ca"/>
+              <stop offset="1" stop-color="#0f766e"/>
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#brand-grad)"/>
+          <g fill="none" stroke="#fff" stroke-linecap="round">
+            <rect x="18" y="18" width="28" height="28" rx="5" stroke-width="4"/>
+            <path stroke-width="3.5" d="M25 9v7M32 9v7M39 9v7M25 48v7M32 48v7M39 48v7M9 25h7M9 32h7M9 39h7M48 25h7M48 32h7M48 39h7"/>
+          </g>
+          <rect x="26" y="26" width="12" height="12" rx="2" fill="#fff"/>
+        </svg>
+        <span class="brand__text"><span class="brand__org">XMUM AIHUB</span> <span class="brand__name">AIT GPU Server</span></span>
+      </a>
+      <div class="site-header__actions">
+        <button id="nav-toggle" class="icon-btn js-only" type="button" aria-controls="sidebar" aria-expanded="false">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-menu"/></svg>
+          <span class="icon-btn__label">Contents</span>
+        </button>
+        <button id="theme-toggle" class="icon-btn js-only" type="button">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-monitor"/></svg>
+          <span class="visually-hidden">Color theme: System</span>
+        </button>
+        <a class="icon-btn" href="https://github.com/XMUM-AIHUB/XMUM-AIHUB.github.io">
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-github"/></svg>
+          <span class="visually-hidden">Source on GitHub</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside id="sidebar" class="sidebar" aria-label="Page tools">
+      <div class="sidebar__inner">
+        <section id="details" class="panel js-only" aria-labelledby="details-title">
+          <h2 id="details-title" class="panel__title">Your details</h2>
+          <p class="panel__hint">Fill these in once and every command on this page uses them. They are saved only in this browser.</p>
+          <div class="field">
+            <label for="in-username">Username</label>
+            <input id="in-username" data-input="username" type="text" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="e.g. user123" aria-describedby="in-username-msg">
+            <p id="in-username-msg" class="field__msg" hidden></p>
+          </div>
+          <div class="field">
+            <label for="in-hostname">Server address</label>
+            <input id="in-hostname" data-input="hostname" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="IP address or hostname" aria-describedby="in-hostname-hint in-hostname-msg">
+            <p id="in-hostname-hint" class="field__hint">The IP address or domain name you were given.</p>
+            <p id="in-hostname-msg" class="field__msg" hidden></p>
+          </div>
+          <div class="details__preview">
+            <span class="details__preview-label">Your login command</span>
+            <code>ssh <var data-var="username">username</var>@<var data-var="hostname">hostname</var></code>
+          </div>
+          <button id="details-clear" class="link-btn" type="button">Clear my details</button>
+          <p id="storage-note" class="panel__note" hidden>Your browser is blocking storage, so these details will be forgotten when you leave the page.</p>
+        </section>
+
+        <section id="progress" class="panel js-only" aria-labelledby="progress-title">
+          <h2 id="progress-title" class="panel__title">Your progress</h2>
+          <progress id="progress-bar" class="progress" max="6" value="0" aria-labelledby="progress-title" aria-describedby="progress-count"></progress>
+          <p class="progress__meta"><span id="progress-count">0 of 6 done</span> <button id="progress-reset" class="link-btn" type="button">Reset</button></p>
+        </section>
+
+        <nav id="toc" class="toc" aria-label="On this page">
+          <p class="toc__group" id="toc-rules">Rules</p>
+          <ol class="toc__list" role="list" aria-labelledby="toc-rules">
+            <li><a href="#purpose">Purpose of use</a></li>
+            <li><a href="#rules" data-done-for="rules">Server usage rules</a></li>
+            <li><a href="#consequences">Consequences of misuse</a></li>
+          </ol>
+          <p class="toc__group" id="toc-tutorial">Tutorial</p>
+          <ol class="toc__list" role="list" aria-labelledby="toc-tutorial">
+            <li><a href="#prerequisites">Prerequisites</a></li>
+            <li><a href="#step-1" data-done-for="step-1"><span class="toc__num" aria-hidden="true">1</span> Log in to the server</a></li>
+            <li><a href="#step-2" data-done-for="step-2"><span class="toc__num" aria-hidden="true">2</span> Load modules</a></li>
+            <li><a href="#step-3" data-done-for="step-3"><span class="toc__num" aria-hidden="true">3</span> Prepare a job script</a></li>
+            <li><a href="#step-4" data-done-for="step-4"><span class="toc__num" aria-hidden="true">4</span> Submit the job</a></li>
+            <li><a href="#step-5" data-done-for="step-5"><span class="toc__num" aria-hidden="true">5</span> Monitor and manage jobs</a></li>
+          </ol>
+          <p class="toc__group" id="toc-extras">Extras</p>
+          <ul class="toc__list" role="list" aria-labelledby="toc-extras">
+            <!-- BEGIN JUPYTER (contents entry) -->
+            <li><a href="#jupyter">Jupyter Notebook</a></li>
+            <!-- END JUPYTER (contents entry) -->
+            <li class="js-only"><a href="#builder">Job script builder</a></li>
+            <li class="js-only"><a href="#cheatsheet">Command cheat sheet</a></li>
+          </ul>
+        </nav>
+      </div>
+    </aside>
+
+    <main id="main" tabindex="-1">
+      <noscript>
+        <p class="noscript-note">JavaScript is off. Everything here is readable, but personalized commands, copy buttons and the job script builder need JavaScript.</p>
+      </noscript>
+
+      <section id="top" class="hero" aria-labelledby="page-title">
+        <div class="hero__content">
+          <h1 id="page-title" class="hero__title"><span class="hero__kicker">XMUM AIHUB<span class="visually-hidden"> –</span></span> AIT GPU Server</h1>
+          <p class="hero__lead">Rules and Tutorial on Remote Login, Module Loading, and Job Submission with Slurm</p>
+          <ul class="chips" role="list" aria-label="At a glance">
+            <li class="chip"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-book-open"/></svg>For coursework and AI research</li>
+            <li class="chip"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-layers"/></svg>Slurm job scheduler</li>
+            <li class="chip"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-cpu"/></svg>Anaconda with PyTorch and TensorFlow</li>
+          </ul>
+          <div class="hero__actions">
+            <a class="btn btn--primary" href="#step-1">Start the tutorial <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow-right"/></svg></a>
+            <a class="btn btn--secondary" href="#rules">Read the rules</a>
+            <button class="btn btn--ghost js-only" type="button" data-action="personalize">Personalize commands</button>
+          </div>
+        </div>
+
+        <figure class="terminal" aria-labelledby="terminal-caption">
+          <div class="terminal__bar" aria-hidden="true">
+            <span class="terminal__dots"><i></i><i></i><i></i></span>
+            <span class="terminal__title">Quick start</span>
+          </div>
+          <figcaption id="terminal-caption" class="visually-hidden">Quick start: log in from your computer, then load Anaconda, submit a job and check its status on the server.</figcaption>
+          <div class="terminal__body">
+            <span class="terminal__line" style="--i:0"><span class="terminal__prompt terminal__prompt--local" aria-hidden="true">you@laptop:~$</span> ssh <var data-var="username">username</var>@<var data-var="hostname">hostname</var></span>
+            <span class="terminal__line terminal__out" style="--i:1"><var data-var="username">username</var>@<var data-var="hostname">hostname</var>'s password:</span>
+            <span class="terminal__line" style="--i:2"><span class="terminal__prompt" aria-hidden="true"><var data-var="username">username</var>@server:~$</span> module load anaconda</span>
+            <span class="terminal__line" style="--i:3"><span class="terminal__prompt" aria-hidden="true"><var data-var="username">username</var>@server:~$</span> sbatch my_job_script.sh</span>
+            <span class="terminal__line terminal__out" style="--i:4">Submitted batch job 4242</span>
+            <span class="terminal__line" style="--i:5"><span class="terminal__prompt" aria-hidden="true"><var data-var="username">username</var>@server:~$</span> squeue -u <var data-var="username">username</var></span>
+            <span class="terminal__line terminal__out" style="--i:6">  JOBID  NAME    ST  TIME</span>
+            <span class="terminal__line terminal__out" style="--i:7">   4242  my_job  R   0:05</span>
+            <span class="terminal__line" style="--i:8"><span class="terminal__prompt" aria-hidden="true"><var data-var="username">username</var>@server:~$</span> <span class="terminal__cursor" aria-hidden="true"></span></span>
+          </div>
+        </figure>
+      </section>
+
+      <!-- ADMIN: To post a notice (e.g. scheduled maintenance), edit the text below and
+           delete the word "hidden". Put "hidden" back when the notice no longer applies. -->
+      <div id="announcements" class="callout callout--warn announcement" role="note" hidden>
+        <svg class="icon callout__icon" aria-hidden="true" focusable="false"><use href="#i-alert-triangle"/></svg>
+        <div>
+          <p><strong>Scheduled maintenance:</strong> The server will be unavailable on DATE from TIME to TIME. Back up your files and log out before it starts.</p>
+        </div>
+      </div>
+
+      <section id="purpose" class="section" aria-labelledby="purpose-title">
+        <h2 id="purpose-title">Purpose of Use</h2>
+        <p class="section__lead">This server is dedicated to training AI models and computational tasks related to your coursework or research in AI. Security testing, penetration testing, or unrelated tasks are strictly prohibited. Basic Linux skills are expected.</p>
+        <div class="purpose">
+          <div class="purpose__card purpose__card--yes">
+            <h3><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check-circle"/></svg>Built for</h3>
+            <ul>
+              <li>Training AI models</li>
+              <li>Computational tasks for your AI coursework or research</li>
+            </ul>
+          </div>
+          <div class="purpose__card purpose__card--no">
+            <h3><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-x-circle"/></svg>Not allowed</h3>
+            <ul>
+              <li>Security testing</li>
+              <li>Penetration testing</li>
+              <li>Unrelated tasks</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="rules" class="section" aria-labelledby="rules-title">
+        <h2 id="rules-title">Server Usage Rules for Users</h2>
+        <dl class="rules">
+          <div class="rule" id="rule-authorized-users">
+            <dt><svg class="icon rule__icon" aria-hidden="true" focusable="false"><use href="#i-user-check"/></svg>Authorized Users Only</dt>
+            <dd>Access to the server is granted only to authorized users for academic purposes.</dd>
+          </div>
+          <div class="rule" id="rule-secure-ssh-login">
+            <dt><svg class="icon rule__icon" aria-hidden="true" focusable="false"><use href="#i-lock"/></svg>Use Secure SSH Login</dt>
+            <dd>Always use secure SSH login with your username and password.</dd>
+          </div>
+          <div class="rule" id="rule-protect-credentials">
+            <dt><svg class="icon rule__icon" aria-hidden="true" focusable="false"><use href="#i-key"/></svg>Protect Credentials</dt>
+            <dd>Do not share your login credentials with anyone. Unauthorized access is prohibited.</dd>
+          </div>
+          <div class="rule" id="rule-no-personal-data">
+            <dt><svg class="icon rule__icon" aria-hidden="true" focusable="false"><use href="#i-eye-off"/></svg>No Personal Data</dt>
+            <dd>Only store data relevant to your academic or research projects. Personal or sensitive data is prohibited.</dd>
+          </div>
+          <div class="rule" id="rule-backup-regularly">
+            <dt><svg class="icon rule__icon" aria-hidden="true" focusable="false"><use href="#i-save"/></svg>Back Up Regularly</dt>
+            <dd>Ensure important files are backed up. The server may undergo maintenance that could impact data availability.</dd>
+          </div>
+          <div class="rule" id="rule-data-security">
+            <dt><svg class="icon rule__icon" aria-hidden="true" focusable="false"><use href="#i-shield"/></svg>Data Security</dt>
+            <dd>Do not attempt to access or interfere with other users' data or jobs.</dd>
+          </div>
+          <div class="rule" id="rule-report-issues">
+            <dt><svg class="icon rule__icon" aria-hidden="true" focusable="false"><use href="#i-flag"/></svg>Report Issues</dt>
+            <dd>Immediately report any security incidents or vulnerabilities to the server administrator.</dd>
+          </div>
+          <div class="rule" id="rule-maintenance-schedules">
+            <dt><svg class="icon rule__icon" aria-hidden="true" focusable="false"><use href="#i-calendar"/></svg>Respect Maintenance Schedules</dt>
+            <dd>Regular maintenance times will be communicated. Back up before the maintenance and log out during these times to avoid data loss.</dd>
+          </div>
+          <div class="rule" id="rule-academic-use-only">
+            <dt><svg class="icon rule__icon" aria-hidden="true" focusable="false"><use href="#i-book-open"/></svg>Academic Use Only</dt>
+            <dd>The server is for educational and research purposes only. Commercial or personal use is prohibited.</dd>
+          </div>
+          <div class="rule" id="rule-university-policies">
+            <dt><svg class="icon rule__icon" aria-hidden="true" focusable="false"><use href="#i-clipboard"/></svg>Follow University Policies</dt>
+            <dd>Adhere to all university policies and guidelines related to computing resources.</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section id="consequences" class="section section--tight" aria-labelledby="consequences-title">
+        <div class="consequences">
+          <h2 id="consequences-title"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-alert-triangle"/></svg>Consequences of Misuse</h2>
+          <dl class="consequences__list">
+            <div id="consequence-account-suspension">
+              <dt><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-user-x"/></svg>Account Suspension</dt>
+              <dd>Failure to follow these rules may result in temporary or permanent suspension of server access.</dd>
+            </div>
+            <div id="consequence-academic-discipline">
+              <dt><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-book-open"/></svg>Academic Discipline</dt>
+              <dd>Misuse of resources may be reported and could lead to academic disciplinary action.</dd>
+            </div>
+          </dl>
+        </div>
+        <p class="done js-only">
+          <label class="check"><input type="checkbox" data-done="rules"> <span>I've read and will follow these rules <span class="check__note">(saved only in this browser)</span></span></label>
+        </p>
+      </section>
+
+      <section id="tutorial" class="section" aria-labelledby="tutorial-title">
+        <h2 id="tutorial-title">Tutorial on Remote Login, Module Loading, and Job Submission with Slurm</h2>
+        <p class="section__lead">Five steps from your first login to a GPU job running on the server.</p>
+
+        <section id="prerequisites" class="subsection" data-label="Prerequisites" aria-labelledby="prerequisites-title">
+          <h3 id="prerequisites-title">Prerequisites</h3>
+          <ul class="checklist" role="list">
+            <li>The SSH client is installed on your local machine.</li>
+            <li>Access to a remote server with Slurm and module tools installed.</li>
+            <li>A prepared job script (or familiarity with creating one).</li>
+            <li>To upload/create/view/modify files, it is recommended to use <a href="https://www.hostbuf.com/">FinalShell</a> or <a href="https://filezilla-project.org/">FileZilla</a>.</li>
+          </ul>
+          <details class="explain">
+            <summary>Connecting with FileZilla</summary>
+            <p>Use Host <code>sftp://<var data-var="hostname">hostname</var></code>, Username <code><var data-var="username">username</var></code>, your server password, and Port <code>22</code>, then click <strong>Quickconnect</strong>.</p>
+          </details>
+        </section>
+
+        <section id="step-1" class="step" data-label="Step 1" aria-labelledby="step-1-title">
+          <h3 id="step-1-title" class="step__title"><span class="step__kicker">Step 1<span class="visually-hidden">:</span></span> Log in to the Remote Server</h3>
+          <p>To log in via SSH:</p>
+          <ol class="steps-list">
+            <li>
+              <p>Open a Terminal on your local machine.</p>
+              <div class="tabs" id="open-terminal" data-tabs="os" data-tabs-label="Your operating system">
+                <section class="tabs__panel" id="os-windows" data-tab="windows" aria-labelledby="os-windows-title">
+                  <h4 class="tabs__heading" id="os-windows-title">Windows</h4>
+                  <p>Press <kbd>Win</kbd>, type <strong>Terminal</strong> (Windows 11) or <strong>PowerShell</strong> (Windows 10) and press <kbd>Enter</kbd>. Both already include the <code>ssh</code> command.</p>
+                </section>
+                <section class="tabs__panel" id="os-macos" data-tab="macos" aria-labelledby="os-macos-title">
+                  <h4 class="tabs__heading" id="os-macos-title">macOS</h4>
+                  <p>Press <kbd>⌘</kbd> <kbd>Space</kbd>, type <strong>Terminal</strong> and press <kbd>Return</kbd>.</p>
+                </section>
+                <section class="tabs__panel" id="os-linux" data-tab="linux" aria-labelledby="os-linux-title">
+                  <h4 class="tabs__heading" id="os-linux-title">Linux</h4>
+                  <p>Open your terminal app. On many desktops, <kbd>Ctrl</kbd> <kbd>Alt</kbd> <kbd>T</kbd> opens one.</p>
+                </section>
+              </div>
+            </li>
+            <li>
+              <p>Run the SSH command:</p>
+              <div class="code" data-where="local" data-cheat="Log in to the server" data-keywords="login connect ssh"><pre><code>ssh <var data-var="username">username</var>@<var data-var="hostname">hostname</var></code></pre></div>
+              <ul>
+                <li>Replace <code>username</code> with your remote server username.</li>
+                <li>Replace <code>hostname</code> with the IP address or domain name of the server.</li>
+              </ul>
+              <p>Example:</p>
+              <div class="code" data-where="local" data-title="Example" data-copy="false"><pre><code>ssh user123@cluster.example.com</code></pre></div>
+            </li>
+            <li>
+              <p>Authenticate by entering your password if prompted. A list of allowed commands will be displayed after login.</p>
+              <ul class="tips">
+                <li>Your password stays invisible while you type. That's normal, so just press <kbd>Enter</kbd> when you're done.</li>
+                <li>The first time you connect, SSH asks you to confirm the server's fingerprint. Type <code>yes</code> and press <kbd>Enter</kbd>.</li>
+              </ul>
+            </li>
+          </ol>
+          <p class="done js-only">
+            <label class="check"><input type="checkbox" data-done="step-1"> <span>I've finished step 1</span></label>
+          </p>
+        </section>
+
+        <section id="step-2" class="step" data-label="Step 2" aria-labelledby="step-2-title">
+          <h3 id="step-2-title" class="step__title"><span class="step__kicker">Step 2<span class="visually-hidden">:</span></span> Load Required Modules</h3>
+          <p>Modules provide access to specific software or libraries on a shared server (currently, only Anaconda is installed with the latest PyTorch and TensorFlow). You can also install packages with pip and create your Python environment with conda.</p>
+          <p>Listing and loading modules:</p>
+          <ol class="steps-list">
+            <li>
+              <p>List available modules:</p>
+              <div class="code" data-where="server" data-cheat="List available modules" data-keywords="software modules avail"><pre><code>module avail</code></pre></div>
+              <p>This command displays all modules available for loading on the server.</p>
+            </li>
+            <li>
+              <p>Load a module:</p>
+              <p class="syntax"><code>module load <var>modulename</var></code></p>
+              <p>Replace <code>modulename</code> with the desired module name.</p>
+              <p>Example:</p>
+              <div class="code" data-where="server" data-title="Example" data-cheat="Load Anaconda (Python, PyTorch, TensorFlow)" data-keywords="conda python pytorch tensorflow module"><pre><code>module load anaconda</code></pre></div>
+            </li>
+            <li>
+              <p>Verify loaded modules:</p>
+              <div class="code" data-where="server" data-cheat="Show the modules you have loaded" data-keywords="module list loaded"><pre><code>module list</code></pre></div>
+              <p>Shows the list of modules currently loaded in your session.</p>
+            </li>
+          </ol>
+          <p class="done js-only">
+            <label class="check"><input type="checkbox" data-done="step-2"> <span>I've finished step 2</span></label>
+          </p>
+        </section>
+
+        <section id="step-3" class="step" data-label="Step 3" aria-labelledby="step-3-title">
+          <h3 id="step-3-title" class="step__title"><span class="step__kicker">Step 3<span class="visually-hidden">:</span></span> Prepare a Slurm Job Script</h3>
+          <p>There are two ways to submit jobs to Slurm.</p>
+          <div class="method-picker">
+            <a class="method-card" href="#method-1">
+              <span class="method-card__title">Method 1 · Interactive</span>
+              <span class="method-card__text">Run a Python script with <code>srun</code> and watch its output live in your terminal.</span>
+            </a>
+            <a class="method-card" href="#method-2">
+              <span class="method-card__title">Method 2 · Job script</span>
+              <span class="method-card__text">Write a job script and submit it with <code>sbatch</code>. It keeps running after you log out. Steps 4 and 5 use this method.</span>
+            </a>
+          </div>
+
+          <section id="method-1" class="method" data-label="Step 3 · Method 1" aria-labelledby="method-1-title">
+            <h4 id="method-1-title">Method 1: Run a Python script interactively</h4>
+            <p>From terminal,</p>
+            <div class="code" data-where="server" data-cheat="Run a Python script interactively on 1 GPU" data-keywords="srun interactive gpu run"><pre><code>srun <span class="flag" data-flag="gres">--gres=gpu:1</span> <span class="flag" data-flag="time">--time=00:30:00</span> <span class="flag" data-flag="mem">--mem=500M</span> python my_script.py</code></pre></div>
+            <p class="flags__intro">Information:</p>
+            <dl class="flags">
+              <div class="flags__item" data-flag="gres"><dt><code>--gres=gpu:1</code></dt><dd>Specifies 1 GPU.</dd></div>
+              <div class="flags__item" data-flag="time"><dt><code>--time=00:30:00</code></dt><dd>Sets a 30-minute runtime limit.</dd></div>
+              <div class="flags__item" data-flag="mem"><dt><code>--mem=500M</code></dt><dd>Allocates 500MB of memory.</dd></div>
+            </dl>
+            <p>This will run <code>my_script.py</code> and display output directly in the terminal.</p>
+          </section>
+
+          <section id="method-2" class="method" data-label="Step 3 · Method 2" aria-labelledby="method-2-title">
+            <h4 id="method-2-title">Method 2: Submit a job script</h4>
+            <p>To submit a python script to Slurm, you need a job script with specific configurations and commands. Below is a guide for creating a basic Slurm job script.</p>
+            <ol class="steps-list">
+              <li>
+                <p>Create and open a script file using Vim or other editors (if using Vim, press <kbd>i</kbd> to start editing):</p>
+                <div class="code" data-where="server" data-cheat="Create or edit a job script in Vim" data-keywords="vim editor edit file create"><pre><code>vim my_job_script.sh</code></pre></div>
+              </li>
+              <li>
+                <p>Add Slurm and command lines:</p>
+                <div class="code" data-where="server" data-title="my_job_script.sh" data-download="my_job_script.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=my_job</span>              <span class="tok-comment"># Job name</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=output_%j.txt</span>         <span class="tok-comment"># Output file name with job ID</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--error=error_%j.txt</span>           <span class="tok-comment"># Error file name with job ID</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--gres=gpu:1</span>                   <span class="tok-comment"># Number of GPUs</span>
+
+<span class="tok-comment"># Load necessary modules</span>
+module load anaconda
+
+<span class="tok-comment"># Run the job command</span>
+python my_script.py</code></pre></div>
+                <p class="tip">You can also create the file on your computer and upload it with FinalShell or FileZilla.<span class="js-only"> Want different resources? <a href="#builder">Build your own script</a>.</span></p>
+              </li>
+              <li>
+                <p>Save and close the editor.</p>
+                <ul>
+                  <li>If using Vim, press escape (<kbd>Esc</kbd>), type <kbd>:wq</kbd>, and press <kbd>Enter</kbd> to save and exit.</li>
+                </ul>
+              </li>
+            </ol>
+          </section>
+          <p class="done js-only">
+            <label class="check"><input type="checkbox" data-done="step-3"> <span>I've finished step 3</span></label>
+          </p>
+        </section>
+
+        <section id="step-4" class="step" data-label="Step 4" aria-labelledby="step-4-title">
+          <h3 id="step-4-title" class="step__title"><span class="step__kicker">Step 4<span class="visually-hidden">:</span></span> Submit the Job to Slurm</h3>
+          <h4>To submit the job</h4>
+          <div class="code" data-where="server" data-cheat="Submit a job script" data-keywords="sbatch submit batch queue"><pre><code>sbatch my_job_script.sh</code></pre></div>
+          <p>This submits the job to Slurm, which will schedule and execute it based on resource availability and job priority. Slurm replies with <samp>Submitted batch job <var>&lt;job_id&gt;</var></samp>. Note the number.</p>
+
+          <h4>To check job status</h4>
+          <div class="code" data-where="server" data-cheat="Check the status of your jobs" data-keywords="squeue status queue running pending"><pre><code>squeue -u <var data-var="username">username</var></code></pre></div>
+          <p>Replace <code>username</code> with your actual username. This command shows the status of your jobs.</p>
+          <p class="tip">In the <strong>ST</strong> column, <code>PD</code> means pending (waiting for resources) and <code>R</code> means running. A job leaves the list once it finishes.</p>
+
+          <h4>To view job output</h4>
+          <p>After the job completes, check the output file specified in your script (e.g., <code>output_&lt;job_id&gt;.txt</code>) for results.</p>
+          <div class="code" data-where="server" data-cheat="Read a job's output file" data-keywords="cat output results log view"><pre><code>cat output_<var>&lt;job_id&gt;</var>.txt</code></pre></div>
+          <p class="done js-only">
+            <label class="check"><input type="checkbox" data-done="step-4"> <span>I've finished step 4</span></label>
+          </p>
+        </section>
+
+        <section id="step-5" class="step" data-label="Step 5" aria-labelledby="step-5-title">
+          <h3 id="step-5-title" class="step__title"><span class="step__kicker">Step 5<span class="visually-hidden">:</span></span> Monitor and Manage Jobs</h3>
+          <p>Common job management commands:</p>
+          <h4>Cancel a job</h4>
+          <div class="code" data-where="server" data-cheat="Cancel a job" data-keywords="scancel stop kill cancel"><pre><code>scancel <var>&lt;job_id&gt;</var></code></pre></div>
+          <p>Replace <code>&lt;job_id&gt;</code> with the ID of the job you want to cancel.</p>
+          <div class="callout callout--note" role="note">
+            <svg class="icon callout__icon" aria-hidden="true" focusable="false"><use href="#i-info"/></svg>
+            <p><strong>Note:</strong> Always confirm job parameters and resource requests as appropriate for your cluster's policies to avoid overloading shared resources.</p>
+          </div>
+          <p class="done js-only">
+            <label class="check"><input type="checkbox" data-done="step-5"> <span>I've finished step 5</span></label>
+          </p>
+        </section>
+      </section>
+
+      <!-- BEGIN JUPYTER ===================================================================
+           To remove this section, delete everything down to "END JUPYTER", plus the
+           "BEGIN/END JUPYTER (contents entry)" lines in the sidebar.
+
+           ADMIN: Steps 1–3 were reconstructed because the README only had steps 4–5.
+           Please check these assumptions before publishing:
+             1. Jobs run on the machine users log in to, so the 127.0.0.1 tunnel works.
+                If they don't, tunnel to the node shown in squeue's NODELIST
+                (ssh -N -L PORT:<node>:PORT …) and start Jupyter with --ip=0.0.0.0.
+             2. sshd allows TCP port forwarding for these (restricted-shell) accounts.
+             3. `jupyter` is available after `module load anaconda`.
+             4. Jupyter jobs may hold a GPU, the 2 h / 8G defaults are acceptable, and
+                ports 20000–29999 are free on the server.
+      ===================================================================================== -->
+      <section id="jupyter" class="section" data-label="Jupyter" aria-labelledby="jupyter-title">
+        <h2 id="jupyter-title">Jupyter Notebook on the Server</h2>
+        <p class="section__lead">Run Jupyter as a Slurm job on the GPU server and use it in the browser on your own computer, through an SSH tunnel.</p>
+
+        <div id="jupyter-port" class="port-picker">
+          <div class="js-only">
+            <label class="port-picker__label" for="in-jport">Your Jupyter port</label>
+            <div class="port-picker__row">
+              <input id="in-jport" data-input="jport" type="text" inputmode="numeric" maxlength="5" autocomplete="off" spellcheck="false" aria-describedby="jport-hint jport-msg">
+              <button id="jport-new" class="btn btn--secondary btn--sm" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-shuffle"/></svg>Pick another port</button>
+            </div>
+            <p id="jport-hint" class="field__hint">Everyone on the server needs a different port. Use this number wherever <code>PORT</code> appears below.</p>
+            <p id="jport-msg" class="field__msg" hidden></p>
+          </div>
+          <p class="nojs-only">Choose a number between 20000 and 29999 and use it wherever <code>PORT</code> appears below.</p>
+        </div>
+
+        <ol class="jsteps" role="list">
+          <li id="jupyter-script" class="jstep">
+            <h3 class="jstep__title">Create a Jupyter job script</h3>
+            <p>On the server, create <code>jupyter_job.sh</code> (press <kbd>i</kbd> to edit; <kbd>Esc</kbd> then <kbd>:wq</kbd> to save):</p>
+            <div class="code" data-where="server"><pre><code>vim jupyter_job.sh</code></pre></div>
+            <p>Add these lines:</p>
+            <div class="code" data-where="server" data-title="jupyter_job.sh" data-download="jupyter_job.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=jupyter</span>             <span class="tok-comment"># Job name</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=output.txt</span>            <span class="tok-comment"># Jupyter log, including the URL and token</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--gres=gpu:1</span>                   <span class="tok-comment"># Number of GPUs</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--time=02:00:00</span>                <span class="tok-comment"># Time limit (2 h)</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--mem=8G</span>                       <span class="tok-comment"># Memory (8 GB)</span>
+
+<span class="tok-comment"># Load necessary modules</span>
+module load anaconda
+
+<span class="tok-comment"># Start Jupyter on your port (reachable only through your SSH tunnel)</span>
+jupyter notebook --no-browser --ip=127.0.0.1 --port=<var data-var="jport">PORT</var> --port-retries=0</code></pre></div>
+            <p class="tip">There's deliberately no <code>--error</code> line. Jupyter prints its URL to the error stream, and without that line Slurm writes both streams to <code>output.txt</code>.</p>
+          </li>
+
+          <li id="jupyter-submit" class="jstep">
+            <h3 class="jstep__title">Submit it and wait for it to start</h3>
+            <div class="code" data-where="server" data-cheat="Start Jupyter as a Slurm job" data-keywords="jupyter notebook sbatch start"><pre><code>sbatch jupyter_job.sh</code></pre></div>
+            <div class="code" data-where="server"><pre><code>squeue -u <var data-var="username">username</var></code></pre></div>
+            <p>Wait until the <strong>ST</strong> column shows <code>R</code> (running).</p>
+            <div class="callout callout--warn" role="note">
+              <svg class="icon callout__icon" aria-hidden="true" focusable="false"><use href="#i-alert-triangle"/></svg>
+              <p>Until the job starts, <code>output.txt</code> may still contain the URL from your previous session. Run these commands in the folder where you created the script.</p>
+            </div>
+          </li>
+
+          <li id="jupyter-tunnel" class="jstep">
+            <h3 class="jstep__title">Open an SSH tunnel from your computer</h3>
+            <p>In a <strong>new terminal on your own computer</strong>, not on the server, run:</p>
+            <div class="code" data-where="local" data-cheat="Open the SSH tunnel for Jupyter" data-keywords="jupyter tunnel port forward ssh"><pre><code>ssh -N -L <var data-var="jport">PORT</var>:127.0.0.1:<var data-var="jport">PORT</var> <var data-var="username">username</var>@<var data-var="hostname">hostname</var></code></pre></div>
+            <p>Enter your password. After that the window shows nothing, which is normal. Keep it open while you use Jupyter, and press <kbd>Ctrl</kbd> <kbd>C</kbd> to close the tunnel.</p>
+            <details class="explain">
+              <summary>What do <code>-N</code> and <code>-L</code> do?</summary>
+              <p><code>-L <var data-var="jport">PORT</var>:127.0.0.1:<var data-var="jport">PORT</var></code> forwards that port on your computer to the same port on the server, where Jupyter is listening. <code>-N</code> tells SSH not to open a shell, so it only keeps the tunnel open.</p>
+            </details>
+          </li>
+
+          <li id="jupyter-url" class="jstep">
+            <h3 class="jstep__title">Find the Jupyter URL and token</h3>
+            <p>Find the jupyter URL with token from output.txt file:</p>
+            <div class="code" data-where="server" data-cheat="Find the Jupyter URL and token" data-keywords="jupyter url token output"><pre><code>cat output.txt</code></pre></div>
+            <p>Look for the line that starts with <code>http://127.0.0.1:<var data-var="jport">PORT</var>/</code> and contains <code>token=</code>, and copy the whole URL.</p>
+          </li>
+
+          <li id="jupyter-use" class="jstep">
+            <h3 class="jstep__title">Open Jupyter in your browser</h3>
+            <p>Use jupyter notebook from your local machine as normal, with the computation performed on the server. Paste the URL into your browser. It works as-is, because the tunnel uses the same port on both ends.</p>
+          </li>
+        </ol>
+
+        <div id="jupyter-stop" class="callout callout--note" role="note">
+          <svg class="icon callout__icon" aria-hidden="true" focusable="false"><use href="#i-info"/></svg>
+          <div>
+            <p><strong>When you're done:</strong> cancel the job so the GPU is free for others, then press <kbd>Ctrl</kbd> <kbd>C</kbd> in the tunnel window. Anyone with your token URL can run code as you, so never share it.</p>
+            <div class="code" data-where="server"><pre><code>scancel <var>&lt;job_id&gt;</var></code></pre></div>
+          </div>
+        </div>
+
+        <details class="explain" id="jupyter-troubleshooting">
+          <summary>Troubleshooting</summary>
+          <dl class="trouble">
+            <dt><samp>port … is already in use</samp> or <samp>no available port could be found</samp> in <code>output.txt</code></dt>
+            <dd>Someone else is using that port. Pick another port, update <code>--port</code> in <code>jupyter_job.sh</code>, and submit again.</dd>
+            <dt><samp>bind … Address already in use</samp> when opening the tunnel</dt>
+            <dd>That port is busy on your own computer. Pick another port and use it in both the script and the tunnel.</dd>
+            <dt><samp>channel … open failed: connect failed: Connection refused</samp></dt>
+            <dd>Jupyter isn't running yet, or the port is wrong. Check <code>squeue</code> and <code>output.txt</code>.</dd>
+            <dt><samp>administratively prohibited</samp></dt>
+            <dd>Port forwarding isn't allowed for your account. Contact the server administrator.</dd>
+          </dl>
+        </details>
+      </section>
+      <!-- END JUPYTER ======================================================================= -->
+
+      <section id="builder" class="section section--wide js-only" aria-labelledby="builder-title">
+        <h2 id="builder-title">Job Script Builder</h2>
+        <p class="section__lead" id="builder-intro">Fill in the form to get a ready-made Slurm job script. Copy it, or download it and upload it with FinalShell or FileZilla. Optional fields you leave blank are left out of the script.</p>
+        <div class="builder">
+          <div class="builder__grid">
+            <form id="builder-form" class="builder__form" novalidate aria-describedby="builder-intro">
+              <fieldset>
+                <legend>Job</legend>
+                <div class="fieldset__grid">
+                  <div class="field">
+                    <label for="b-file">Script file name</label>
+                    <input id="b-file" name="file" type="text" value="my_job_script.sh" required autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="b-file-msg">
+                    <p id="b-file-msg" class="field__msg" hidden></p>
+                  </div>
+                  <div class="field">
+                    <label for="b-job">Job name <span class="field__opt">optional</span></label>
+                    <input id="b-job" name="job" type="text" value="my_job" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="b-job-msg">
+                    <p id="b-job-msg" class="field__msg" hidden></p>
+                  </div>
+                  <div class="field">
+                    <label for="b-out">Output file <span class="field__opt">optional</span></label>
+                    <input id="b-out" name="out" type="text" value="output_%j.txt" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="b-out-hint b-out-msg">
+                    <p id="b-out-hint" class="field__hint"><code>%j</code> becomes the job ID.</p>
+                    <p id="b-out-msg" class="field__msg" hidden></p>
+                  </div>
+                  <div class="field">
+                    <label for="b-err">Error file <span class="field__opt">optional</span></label>
+                    <input id="b-err" name="err" type="text" value="error_%j.txt" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="b-err-hint b-err-msg">
+                    <p id="b-err-hint" class="field__hint">Leave blank to send errors to the output file.</p>
+                    <p id="b-err-msg" class="field__msg" hidden></p>
+                  </div>
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend>Resources</legend>
+                <div class="fieldset__grid fieldset__grid--3">
+                  <div class="field">
+                    <label for="b-gpus">GPUs</label>
+                    <!-- ADMIN: adjust these options to the number of GPUs on the server. -->
+                    <select id="b-gpus" name="gpus" aria-describedby="b-gpus-hint">
+                      <option value="0">0 (CPU only)</option>
+                      <option value="1" selected>1</option>
+                      <option value="2">2</option>
+                      <option value="3">3</option>
+                      <option value="4">4</option>
+                    </select>
+                    <p id="b-gpus-hint" class="field__hint">Request only what you need.</p>
+                  </div>
+                  <div class="field">
+                    <label for="b-time">Time limit <span class="field__opt">optional</span></label>
+                    <input id="b-time" name="time" type="text" value="00:30:00" autocomplete="off" spellcheck="false" aria-describedby="b-time-hint b-time-msg">
+                    <p id="b-time-hint" class="field__hint"><span class="nowrap">HH:MM:SS</span>, minutes, or <span class="nowrap">D-HH:MM:SS</span>. <strong id="b-time-meaning"></strong></p>
+                    <p id="b-time-msg" class="field__msg" hidden></p>
+                  </div>
+                  <div class="field">
+                    <label for="b-mem">Memory <span class="field__opt">optional</span></label>
+                    <input id="b-mem" name="mem" type="text" value="500M" autocomplete="off" spellcheck="false" aria-describedby="b-mem-hint b-mem-msg">
+                    <p id="b-mem-hint" class="field__hint">e.g. 500M or 8G. If your job runs out of memory, increase it.</p>
+                    <p id="b-mem-msg" class="field__msg" hidden></p>
+                  </div>
+                </div>
+              </fieldset>
+              <fieldset>
+                <legend>Software and command</legend>
+                <div class="fieldset__grid">
+                  <div class="field">
+                    <label for="b-module">Modules to load <span class="field__opt">optional</span></label>
+                    <input id="b-module" name="module" type="text" value="anaconda" list="b-module-list" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="b-module-msg">
+                    <datalist id="b-module-list"><option value="anaconda"></option></datalist>
+                    <p id="b-module-msg" class="field__msg" hidden></p>
+                  </div>
+                  <div class="field">
+                    <label for="b-env">Conda environment <span class="field__opt">optional</span></label>
+                    <input id="b-env" name="env" type="text" value="" placeholder="e.g. myenv" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="b-env-hint b-env-msg">
+                    <p id="b-env-hint" class="field__hint">One you created with <code>conda create</code>.</p>
+                    <p id="b-env-msg" class="field__msg" hidden></p>
+                  </div>
+                  <div class="field field--full">
+                    <label for="b-cmd">Command to run</label>
+                    <input id="b-cmd" class="input--mono" name="cmd" type="text" value="python my_script.py" required autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="b-cmd-msg">
+                    <p id="b-cmd-msg" class="field__msg" hidden></p>
+                  </div>
+                </div>
+              </fieldset>
+              <button id="b-reset" class="btn btn--secondary btn--sm" type="button"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-refresh"/></svg>Reset to defaults</button>
+            </form>
+
+            <div class="builder__output">
+              <h3 class="builder__heading">Your job script</h3>
+              <div id="b-script-block" class="code" data-where="server" data-title="my_job_script.sh" data-download="my_job_script.sh"><pre><code id="b-script"></code></pre></div>
+              <p id="builder-status" class="builder__status" role="status"></p>
+              <h3 class="builder__heading">Or run it interactively</h3>
+              <p class="builder__sub">The same resources with <code>srun</code>. The output appears in your terminal.</p>
+              <div id="b-srun-block" class="code" data-where="server"><pre><code id="b-srun"></code></pre></div>
+              <h3 class="builder__heading">Next steps</h3>
+              <ol class="next-steps">
+                <li>
+                  <p>Create the file on the server and paste the script in, or upload the downloaded file:</p>
+                  <div class="code" data-where="server"><pre><code>vim <span data-b="file">my_job_script.sh</span></code></pre></div>
+                </li>
+                <li>
+                  <p>Submit it:</p>
+                  <div class="code" data-where="server"><pre><code>sbatch <span data-b="file">my_job_script.sh</span></code></pre></div>
+                </li>
+                <li>
+                  <p>Check its status:</p>
+                  <div class="code" data-where="server"><pre><code>squeue -u <var data-var="username">username</var></code></pre></div>
+                </li>
+                <li>
+                  <p>Read the output when it finishes:</p>
+                  <div class="code" data-where="server"><pre><code>cat <span data-b="out">output_&lt;job_id&gt;.txt</span></code></pre></div>
+                </li>
+              </ol>
+              <p class="tip">Editing on Windows? Save the file with LF (Unix) line endings. sbatch rejects scripts with Windows (CRLF) line breaks.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="cheatsheet" class="section section--wide js-only" aria-labelledby="cheatsheet-title">
+        <h2 id="cheatsheet-title">Command Cheat Sheet</h2>
+        <p class="section__lead">Every command from this guide in one place, filled in with your details. Press <kbd>/</kbd> to search.</p>
+        <div class="cheat__search">
+          <label for="cheat-search" class="visually-hidden">Search commands</label>
+          <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-search"/></svg>
+          <input id="cheat-search" type="search" placeholder="Search, e.g. cancel, GPU, status" autocomplete="off" spellcheck="false" aria-keyshortcuts="/" aria-describedby="cheat-count">
+        </div>
+        <p id="cheat-count" class="cheat__count" role="status"></p>
+        <ol id="cheat-list" class="cheat__list" role="list"></ol>
+        <p id="cheat-empty" class="cheat__empty" hidden>No commands match. Try another word.</p>
+      </section>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <p class="site-footer__brand"><strong>XMUM AIHUB · AIT GPU Server</strong></p>
+      <p>Report security incidents or vulnerabilities immediately to the server administrator.</p>
+      <!-- ADMIN: add a contact here, e.g. <p>Contact: <a href="mailto:name@xmu.edu.my">name@xmu.edu.my</a></p> -->
+      <p>The details you enter stay in this browser and are never sent anywhere.</p>
+      <p class="site-footer__links"><a href="https://github.com/XMUM-AIHUB/XMUM-AIHUB.github.io">Source on GitHub</a> · Last updated <time datetime="2026-10-22">22 October 2026</time> · <a href="#top">Back to top</a></p>
+    </div>
+  </footer>
+
+  <div id="sr-status" class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>
