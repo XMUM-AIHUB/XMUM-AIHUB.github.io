@@ -939,7 +939,7 @@
    * srun flags: hovering a flag highlights its explanation (and vice versa)
    * ========================================================================= */
   function initFlags() {
-    const scope = document.getElementById('method-1');
+    const scope = document.getElementById('run-interactive');
     if (!scope) return;
     const parts = $$('[data-flag]', scope);
     const highlight = (name, on) => parts.forEach((p) => { if (p.dataset.flag === name) p.classList.toggle('is-hl', on); });

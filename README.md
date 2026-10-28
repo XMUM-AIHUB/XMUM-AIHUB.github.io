@@ -63,7 +63,7 @@ This server is dedicated to training AI models and computational tasks related t
 
 - A prepared job script (or familiarity with creating one).
 
-- To Upload/Create/View/Modify Files, it is recommended to use FinalShell or FileZilla.
+- To Upload/Create/View/Modify Files, it is recommended to use VS Code with the Remote - SSH extension (press `F1`, run "Remote-SSH: Connect to Host…", and enter `ssh -p port username@hostname`).
 
 
 
@@ -99,10 +99,16 @@ To Login via SSH:
 ----------------------------------------------------------------------------------------------------------------
 
 
-### Step 2: Access a Compute Node
+### Step 2: Submit a Job Interactively with srun
 
 
-**Required:** you must run this command before you continue to Step 3. Every step after this one is done on the compute node.
+There are two ways to submit a job to Slurm. With `srun` (this step), the job runs right away and its output appears in your terminal, which suits quick tests. With `sbatch` (Step 3), you submit a job script that waits in the queue and keeps running after you log out, which suits longer training.
+
+
+**Required for this step:** open a shell on a compute node before you run the commands below. You don't need it for `sbatch` in Step 3.
+
+
+#### Open a Shell on a Compute Node
 
 1. After logging in you are on the login node. Open a shell on a compute node:
 
@@ -113,21 +119,10 @@ To Login via SSH:
    - Your prompt changes to show the compute node's name. If the server is busy, wait until the shell opens.
 
 
-2. When you have finished working, leave the compute node so its resources are freed for others:
-
-		exit
-
-
-----------------------------------------------------------------------------------------------------------------
-
-
-### Step 3: Load Required Modules
-
+#### Load Required Modules
 
 Modules often access specific software or libraries on a shared server (currently, only Anaconda is installed with the latest Torch, TensorFlow). You can also install packages with pip and create your python environment with conda.
 
-
-Listing and Loading Modules:
 
 1. List Available Modules:
 
@@ -154,16 +149,7 @@ Listing and Loading Modules:
    - Shows the list of modules currently loaded in your session.
 
 
-----------------------------------------------------------------------------------------------------------------
-
-
-### Step 4: Prepare a Slurm Job Script
-
-
-There are two ways to submit jobs to SLURM.
-
-
-#### Method 1: Run a Python script interactively:
+#### Submit the Job with srun
 
 1. From terminal,
 		
@@ -180,7 +166,25 @@ There are two ways to submit jobs to SLURM.
 	This will run `my_script.py` and display output directly in the terminal.
 
 
-#### Method 2 : To submit a python script to Slurm, you need a job script with specific configurations and commands. Below is a guide for creating a basic Slurm job script.
+#### Leave the Compute Node
+
+When you have finished working, leave the compute node so its resources are freed for others:
+
+		exit
+
+
+----------------------------------------------------------------------------------------------------------------
+
+
+### Step 3: Submit a Batch Job with sbatch
+
+
+The second way to submit a job: write a job script and submit it with `sbatch`. Slurm queues it and runs it when a GPU is free, and it keeps running after you log out. You can run it straight from the login node: you don't need the compute-node shell from Step 2, because the job script loads its own modules.
+
+
+#### Write the Job Script
+
+To submit a python script to Slurm, you need a job script with specific configurations and commands. Below is a guide for creating a basic Slurm job script.
 
 1. Create and Open a Script File using Vim or other editors (If using Vim, press 'i' to start editing):
 
@@ -213,10 +217,7 @@ There are two ways to submit jobs to SLURM.
 - If using Vim, press escape, type `:wq`, and press `Enter` to save and exit.
 
 
-----------------------------------------------------------------------------------------------------------------
-
-
-### Step 5: Submit the Job to Slurm
+#### Submit the Job with sbatch
 
 
 - To Submit the Job:
@@ -241,7 +242,7 @@ There are two ways to submit jobs to SLURM.
 ----------------------------------------------------------------------------------------------------------------
 
 
-### Step 6: Monitor and Manage Jobs
+### Step 4: Monitor and Manage Jobs
 
 
 Common Job Management Commands:

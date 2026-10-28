@@ -176,11 +176,9 @@
           <ol class="toc__list" role="list" aria-labelledby="toc-tutorial">
             <li><a href="#prerequisites">Prerequisites</a></li>
             <li><a href="#step-1" data-done-for="step-1"><span class="toc__num" aria-hidden="true">1</span> Log in to the server</a></li>
-            <li><a href="#step-2" data-done-for="step-2"><span class="toc__num" aria-hidden="true">2</span> Access a compute node</a></li>
-            <li><a href="#step-3" data-done-for="step-3"><span class="toc__num" aria-hidden="true">3</span> Load modules</a></li>
-            <li><a href="#step-4" data-done-for="step-4"><span class="toc__num" aria-hidden="true">4</span> Prepare a job script</a></li>
-            <li><a href="#step-5" data-done-for="step-5"><span class="toc__num" aria-hidden="true">5</span> Submit the job</a></li>
-            <li><a href="#step-6" data-done-for="step-6"><span class="toc__num" aria-hidden="true">6</span> Monitor and manage jobs</a></li>
+            <li><a href="#step-2" data-done-for="step-2"><span class="toc__num" aria-hidden="true">2</span> Submit a job with srun</a></li>
+            <li><a href="#step-3" data-done-for="step-3"><span class="toc__num" aria-hidden="true">3</span> Submit a job with sbatch</a></li>
+            <li><a href="#step-4" data-done-for="step-4"><span class="toc__num" aria-hidden="true">4</span> Monitor and manage jobs</a></li>
           </ol>
           <p class="toc__group" id="toc-extras">Extras</p>
           <ul class="toc__list" role="list" aria-labelledby="toc-extras">
@@ -336,7 +334,7 @@
 
       <section id="tutorial" class="section" aria-labelledby="tutorial-title">
         <h2 id="tutorial-title">Tutorial on Remote Login, Module Loading, and Job Submission with Slurm</h2>
-        <p class="section__lead">Six steps from your first login to a GPU job running on the server.</p>
+        <p class="section__lead">Four steps from your first login to a GPU job running on the server.</p>
 
         <section id="prerequisites" class="subsection" data-label="Prerequisites" aria-labelledby="prerequisites-title">
           <h3 id="prerequisites-title">Prerequisites</h3>
@@ -344,11 +342,15 @@
             <li>The SSH client is installed on your local machine.</li>
             <li>Access to a remote server with Slurm and module tools installed.</li>
             <li>A prepared job script (or familiarity with creating one).</li>
-            <li>To upload/create/view/modify files, it is recommended to use <a href="https://www.hostbuf.com/">FinalShell</a> or <a href="https://filezilla-project.org/">FileZilla</a>.</li>
+            <li>To upload/create/view/modify files, it is recommended to use <a href="https://code.visualstudio.com/docs/remote/ssh">VS Code with Remote - SSH</a>.</li>
           </ul>
           <details class="explain">
-            <summary>Connecting with FileZilla</summary>
-            <p>Use Host <code>sftp://<var data-var="hostname">hostname</var></code>, Username <code><var data-var="username">username</var></code>, your server password, and Port <code><var data-var="sshport">port</var></code>, then click <strong>Quickconnect</strong>.</p>
+            <summary>Connecting with VS Code</summary>
+            <ol>
+              <li>Install the <strong>Remote - SSH</strong> extension from the Extensions view (<kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>X</kbd>).</li>
+              <li>Press <kbd>F1</kbd>, run <strong>Remote-SSH: Connect to Host…</strong> and enter <code>ssh -p <var data-var="sshport">port</var> <var data-var="username">username</var>@<var data-var="hostname">hostname</var></code>, then your server password when asked.</li>
+              <li>Use <strong>File › Open Folder</strong> to browse and edit your files on the server. Drag files from your computer into the Explorer to upload them, and open a terminal on the server with <kbd>Ctrl</kbd> <kbd>`</kbd>.</li>
+            </ol>
           </details>
         </section>
 
@@ -398,28 +400,23 @@
         </section>
 
         <section id="step-2" class="step" data-label="Step 2" aria-labelledby="step-2-title">
-          <h3 id="step-2-title" class="step__title"><span class="step__kicker">Step 2<span class="visually-hidden">:</span></span> Access a Compute Node</h3>
+          <h3 id="step-2-title" class="step__title"><span class="step__kicker">Step 2<span class="visually-hidden">:</span></span> Submit a Job Interactively with <code>srun</code></h3>
+          <p>There are two ways to submit a job to Slurm. With <code>srun</code> (this step), the job runs right away and its output appears in your terminal, which suits quick tests. With <code>sbatch</code> (<a href="#step-3">Step 3</a>), you submit a job script that waits in the queue and keeps running after you log out, which suits longer training.</p>
           <div class="callout callout--warn" role="note">
             <svg class="icon callout__icon" aria-hidden="true" focusable="false"><use href="#i-alert-triangle"/></svg>
-            <p><strong>Required:</strong> you must run this command before you continue to Step 3. Every step after this one is done on the compute node.</p>
+            <p><strong>Required for this step:</strong> open a shell on a compute node before you run the commands below. You don't need it for <code>sbatch</code> in <a href="#step-3">Step 3</a>.</p>
           </div>
+
+          <h4>Open a shell on a compute node</h4>
           <p>After you log in, you are on the login node. Run this command to open a shell on a compute node:</p>
-          <div class="code" data-where="server" data-cheat="Open a shell on a compute node (required after login)" data-keywords="srun pty bash compute node interactive shell login"><pre><code>srun --pty bash -l</code></pre></div>
+          <div class="code" data-where="server" data-cheat="Open a shell on a compute node" data-keywords="srun pty bash compute node interactive shell login"><pre><code>srun --pty bash -l</code></pre></div>
           <ul>
             <li><code>srun</code> asks Slurm for a place to run, <code>--pty</code> connects it to your terminal, and <code>bash -l</code> starts a login shell there, so commands like <code>module</code> work.</li>
             <li>When it is ready, your prompt shows the compute node's name instead of the login node's.</li>
             <li>If the server is busy, you may see <samp>srun: job <var>&lt;job_id&gt;</var> queued and waiting for resources</samp>. Wait, and the shell opens when there is room.</li>
           </ul>
-          <p>When you have finished working, leave the compute node so its resources are freed for others:</p>
-          <div class="code" data-where="server" data-cheat="Leave the compute node" data-keywords="exit leave compute node logout"><pre><code>exit</code></pre></div>
-          <p class="tip">This shell counts as a job, so it appears in <code>squeue -u <var data-var="username">username</var></code> while it is open.</p>
-          <p class="done js-only">
-            <label class="check"><input type="checkbox" data-done="step-2"> <span>I've finished step 2</span></label>
-          </p>
-        </section>
 
-        <section id="step-3" class="step" data-label="Step 3" aria-labelledby="step-3-title">
-          <h3 id="step-3-title" class="step__title"><span class="step__kicker">Step 3<span class="visually-hidden">:</span></span> Load Required Modules</h3>
+          <h4>Load required modules</h4>
           <p>Modules provide access to specific software or libraries on a shared server (currently, only Anaconda is installed with the latest PyTorch and TensorFlow). You can also install packages with pip and create your Python environment with conda.</p>
           <p>Listing and loading modules:</p>
           <ol class="steps-list">
@@ -441,27 +438,9 @@
               <p>Shows the list of modules currently loaded in your session.</p>
             </li>
           </ol>
-          <p class="done js-only">
-            <label class="check"><input type="checkbox" data-done="step-3"> <span>I've finished step 3</span></label>
-          </p>
-        </section>
 
-        <section id="step-4" class="step" data-label="Step 4" aria-labelledby="step-4-title">
-          <h3 id="step-4-title" class="step__title"><span class="step__kicker">Step 4<span class="visually-hidden">:</span></span> Prepare a Slurm Job Script</h3>
-          <p>There are two ways to submit jobs to Slurm.</p>
-          <div class="method-picker">
-            <a class="method-card" href="#method-1">
-              <span class="method-card__title">Method 1 · Interactive</span>
-              <span class="method-card__text">Run a Python script with <code>srun</code> and watch its output live in your terminal.</span>
-            </a>
-            <a class="method-card" href="#method-2">
-              <span class="method-card__title">Method 2 · Job script</span>
-              <span class="method-card__text">Write a job script and submit it with <code>sbatch</code>. It keeps running after you log out. Steps 5 and 6 use this method.</span>
-            </a>
-          </div>
-
-          <section id="method-1" class="method" data-label="Step 4 · Method 1" aria-labelledby="method-1-title">
-            <h4 id="method-1-title">Method 1: Run a Python script interactively</h4>
+          <div id="run-interactive">
+            <h4>Submit the job with <code>srun</code></h4>
             <p>From terminal,</p>
             <div class="code" data-where="server" data-cheat="Run a Python script interactively on 1 GPU" data-keywords="srun interactive gpu run"><pre><code>srun <span class="flag" data-flag="gres">--gres=gpu:1</span> <span class="flag" data-flag="time">--time=00:30:00</span> <span class="flag" data-flag="mem">--mem=500M</span> python my_script.py</code></pre></div>
             <p class="flags__intro">Information:</p>
@@ -471,19 +450,31 @@
               <div class="flags__item" data-flag="mem"><dt><code>--mem=500M</code></dt><dd>Allocates 500MB of memory.</dd></div>
             </dl>
             <p>This will run <code>my_script.py</code> and display output directly in the terminal.</p>
-          </section>
+          </div>
 
-          <section id="method-2" class="method" data-label="Step 4 · Method 2" aria-labelledby="method-2-title">
-            <h4 id="method-2-title">Method 2: Submit a job script</h4>
-            <p>To submit a python script to Slurm, you need a job script with specific configurations and commands. Below is a guide for creating a basic Slurm job script.</p>
-            <ol class="steps-list">
-              <li>
-                <p>Create and open a script file using Vim or other editors (if using Vim, press <kbd>i</kbd> to start editing):</p>
-                <div class="code" data-where="server" data-cheat="Create or edit a job script in Vim" data-keywords="vim editor edit file create"><pre><code>vim my_job_script.sh</code></pre></div>
-              </li>
-              <li>
-                <p>Add Slurm and command lines:</p>
-                <div class="code" data-where="server" data-title="my_job_script.sh" data-download="my_job_script.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+          <h4>Leave the compute node</h4>
+          <p>When you have finished working, leave the compute node so its resources are freed for others:</p>
+          <div class="code" data-where="server" data-cheat="Leave the compute node" data-keywords="exit leave compute node logout"><pre><code>exit</code></pre></div>
+          <p class="tip">This shell counts as a job, so it appears in <code>squeue -u <var data-var="username">username</var></code> while it is open.</p>
+          <p class="done js-only">
+            <label class="check"><input type="checkbox" data-done="step-2"> <span>I've finished step 2</span></label>
+          </p>
+        </section>
+
+        <section id="step-3" class="step" data-label="Step 3" aria-labelledby="step-3-title">
+          <h3 id="step-3-title" class="step__title"><span class="step__kicker">Step 3<span class="visually-hidden">:</span></span> Submit a Batch Job with <code>sbatch</code></h3>
+          <p>The second way to submit a job: write a job script and submit it with <code>sbatch</code>. Slurm queues it and runs it when a GPU is free, and it keeps running after you log out. You can run it straight from the login node: you don't need the compute-node shell from <a href="#step-2">Step 2</a>, because the job script loads its own modules.</p>
+
+          <h4>Write the job script</h4>
+          <p>To submit a python script to Slurm, you need a job script with specific configurations and commands. Below is a guide for creating a basic Slurm job script.</p>
+          <ol class="steps-list">
+            <li>
+              <p>Create and open a script file using Vim or other editors (if using Vim, press <kbd>i</kbd> to start editing):</p>
+              <div class="code" data-where="server" data-cheat="Create or edit a job script in Vim" data-keywords="vim editor edit file create"><pre><code>vim my_job_script.sh</code></pre></div>
+            </li>
+            <li>
+              <p>Add Slurm and command lines:</p>
+              <div class="code" data-where="server" data-title="my_job_script.sh" data-download="my_job_script.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=my_job</span>              <span class="tok-comment"># Job name</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=output_%j.txt</span>         <span class="tok-comment"># Output file name with job ID</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--error=error_%j.txt</span>           <span class="tok-comment"># Error file name with job ID</span>
@@ -494,24 +485,17 @@ module load anaconda
 
 <span class="tok-comment"># Run the job command</span>
 python my_script.py</code></pre></div>
-                <p class="tip">You can also create the file on your computer and upload it with FinalShell or FileZilla.<span class="js-only"> Want different resources? <a href="#builder">Build your own script</a>.</span></p>
-              </li>
-              <li>
-                <p>Save and close the editor.</p>
-                <ul>
-                  <li>If using Vim, press escape (<kbd>Esc</kbd>), type <kbd>:wq</kbd>, and press <kbd>Enter</kbd> to save and exit.</li>
-                </ul>
-              </li>
-            </ol>
-          </section>
-          <p class="done js-only">
-            <label class="check"><input type="checkbox" data-done="step-4"> <span>I've finished step 4</span></label>
-          </p>
-        </section>
+              <p class="tip">You can also create the file on your computer and upload it with VS Code.<span class="js-only"> Want different resources? <a href="#builder">Build your own script</a>.</span></p>
+            </li>
+            <li>
+              <p>Save and close the editor.</p>
+              <ul>
+                <li>If using Vim, press escape (<kbd>Esc</kbd>), type <kbd>:wq</kbd>, and press <kbd>Enter</kbd> to save and exit.</li>
+              </ul>
+            </li>
+          </ol>
 
-        <section id="step-5" class="step" data-label="Step 5" aria-labelledby="step-5-title">
-          <h3 id="step-5-title" class="step__title"><span class="step__kicker">Step 5<span class="visually-hidden">:</span></span> Submit the Job to Slurm</h3>
-          <h4>To submit the job</h4>
+          <h4>Submit the job with <code>sbatch</code></h4>
           <div class="code" data-where="server" data-cheat="Submit a job script" data-keywords="sbatch submit batch queue"><pre><code>sbatch my_job_script.sh</code></pre></div>
           <p>This submits the job to Slurm, which will schedule and execute it based on resource availability and job priority. Slurm replies with <samp>Submitted batch job <var>&lt;job_id&gt;</var></samp>. Note the number.</p>
 
@@ -524,12 +508,12 @@ python my_script.py</code></pre></div>
           <p>After the job completes, check the output file specified in your script (e.g., <code>output_&lt;job_id&gt;.txt</code>) for results.</p>
           <div class="code" data-where="server" data-cheat="Read a job's output file" data-keywords="cat output results log view"><pre><code>cat output_<var>&lt;job_id&gt;</var>.txt</code></pre></div>
           <p class="done js-only">
-            <label class="check"><input type="checkbox" data-done="step-5"> <span>I've finished step 5</span></label>
+            <label class="check"><input type="checkbox" data-done="step-3"> <span>I've finished step 3</span></label>
           </p>
         </section>
 
-        <section id="step-6" class="step" data-label="Step 6" aria-labelledby="step-6-title">
-          <h3 id="step-6-title" class="step__title"><span class="step__kicker">Step 6<span class="visually-hidden">:</span></span> Monitor and Manage Jobs</h3>
+        <section id="step-4" class="step" data-label="Step 4" aria-labelledby="step-4-title">
+          <h3 id="step-4-title" class="step__title"><span class="step__kicker">Step 4<span class="visually-hidden">:</span></span> Monitor and Manage Jobs</h3>
           <p>Common job management commands:</p>
           <h4>Cancel a job</h4>
           <div class="code" data-where="server" data-cheat="Cancel a job" data-keywords="scancel stop kill cancel"><pre><code>scancel <var>&lt;job_id&gt;</var></code></pre></div>
@@ -553,7 +537,7 @@ python my_script.py</code></pre></div>
           </div>
           <p>Ready for real workloads? See the <a href="#examples">worked examples</a>: training with PyTorch and TensorFlow, job arrays and Hugging Face models.</p>
           <p class="done js-only">
-            <label class="check"><input type="checkbox" data-done="step-6"> <span>I've finished step 6</span></label>
+            <label class="check"><input type="checkbox" data-done="step-4"> <span>I've finished step 4</span></label>
           </p>
         </section>
       </section>
@@ -1118,7 +1102,7 @@ python -u hf_finetune.py</code></pre></div>
 
       <section id="builder" class="section section--wide js-only" aria-labelledby="builder-title">
         <h2 id="builder-title">Job Script Builder</h2>
-        <p class="section__lead" id="builder-intro">Fill in the form to get a ready-made Slurm job script. Copy it, or download it and upload it with FinalShell or FileZilla. Optional fields you leave blank are left out of the script.</p>
+        <p class="section__lead" id="builder-intro">Fill in the form to get a ready-made Slurm job script. Copy it, or download it and upload it with VS Code. Optional fields you leave blank are left out of the script.</p>
         <div class="builder">
           <div class="builder__grid">
             <form id="builder-form" class="builder__form" novalidate aria-describedby="builder-intro">
