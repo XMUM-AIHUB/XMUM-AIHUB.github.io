@@ -50,6 +50,11 @@
   --c-code-comment: #8b98b5;
   --c-code-key: #c4b5fd;
   --c-code-flag: #7dd3fc;
+  --c-code-string: #a7f3d0;
+  --c-code-num: #fdba74;
+  --c-code-fn: #93c5fd;
+  --c-code-builtin: #67e8f9;
+  --c-code-deco: #f9a8d4;
   --c-code-border: light-dark(#26304a, #334155);
   --c-var-set: #7cc4ff;
   --c-var-unset: #ffd37a;
@@ -899,6 +904,11 @@ body::after {
 .tok-comment { color: var(--c-code-comment); }
 .tok-key { color: var(--c-code-key); }
 .tok-flag, .code .flag { color: var(--c-code-flag); }
+.tok-string { color: var(--c-code-string); }
+.tok-num { color: var(--c-code-num); }
+.tok-fn { color: var(--c-code-fn); }
+.tok-builtin { color: var(--c-code-builtin); }
+.tok-deco { color: var(--c-code-deco); }
 
 /* Personalized values */
 var[data-var].is-unset { border-radius: 3px; cursor: pointer; }

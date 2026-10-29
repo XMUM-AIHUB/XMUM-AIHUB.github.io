@@ -954,6 +954,75 @@
   }
 
   /* =========================================================================
+   * Python syntax highlighting for .py code blocks (copy/download use textContent,
+   * so the spans added here never change what users get)
+   * ========================================================================= */
+  const PY_KEYWORDS = new Set(('and as assert async await break class continue def del elif else except finally for ' +
+    'from global if import in is lambda nonlocal not or pass raise return try while with yield').split(' '));
+  const PY_CONSTANTS = new Set(['True', 'False', 'None']);
+  const PY_BUILTINS = new Set(('abs all any bool dict enumerate float format getattr hasattr int isinstance iter len ' +
+    'list map max min next open print range repr reversed round set setattr sorted str sum super tuple type zip').split(' '));
+  const PY_TOKEN = new RegExp([
+    /(#[^\n]*)/,                                                      // 1 comment
+    /([rRbBuU]?[fF]?[rR]?("""|''')[\s\S]*?\3)/,                       // 2 triple-quoted string (3 = quotes)
+    /([rRbBuU]?[fF]?[rR]?(?:"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'))/, // 4 string
+    /(^[ \t]*@[\w.]+)/,                                               // 5 decorator (line start, via the m flag)
+    /(\b(?:0[xX][\da-fA-F_]+|\d[\d_]*\.?\d*(?:[eE][+-]?\d+)?j?|\.\d+(?:[eE][+-]?\d+)?)\b)/, // 6 number
+    /([A-Za-z_]\w*)/,                                                 // 7 name
+  ].map((r) => r.source).join('|'), 'gm');
+
+  /** Appends a string token; f-strings keep their {expressions} in the normal text colour. */
+  function pyString(frag, text) {
+    const prefix = /^[A-Za-z]*/.exec(text)[0];
+    if (!/f/i.test(prefix)) { frag.append(span('tok-string', text)); return; }
+    text.split(/(\{\{|\}\}|\{[^{}]*\})/).forEach((part, i) => {
+      if (!part) return;
+      if (i % 2 && part[1] !== part[0]) {
+        frag.append(span('tok-string', '{'), part.slice(1, -1), span('tok-string', '}'));
+      } else {
+        frag.append(span('tok-string', part));
+      }
+    });
+  }
+
+  function highlightPython(codeEl) {
+    const text = codeEl.textContent;
+    const frag = document.createDocumentFragment();
+    let last = 0;
+    let prevName = '';
+    for (const m of text.matchAll(PY_TOKEN)) {
+      if (m.index > last) frag.append(text.slice(last, m.index));
+      last = m.index + m[0].length;
+      if (m[1]) frag.append(span('tok-comment', m[0]));
+      else if (m[2] || m[4]) pyString(frag, m[0]);
+      else if (m[5]) {
+        const at = m[0].indexOf('@');
+        frag.append(m[0].slice(0, at), span('tok-deco', m[0].slice(at)));
+      } else if (m[6]) frag.append(span('tok-num', m[0]));
+      else {
+        const name = m[0];
+        if (PY_KEYWORDS.has(name)) frag.append(span('tok-key', name));
+        else if (PY_CONSTANTS.has(name)) frag.append(span('tok-num', name));
+        else if (prevName === 'def' || prevName === 'class') frag.append(span('tok-fn', name));
+        else if (PY_BUILTINS.has(name) && text[last] === '(') frag.append(span('tok-builtin', name));
+        else if (/^\s*\(/.test(text.slice(last, last + 8))) frag.append(span('tok-fn', name));
+        else frag.append(name);
+        prevName = name;
+        continue;
+      }
+      prevName = '';
+    }
+    frag.append(text.slice(last));
+    codeEl.replaceChildren(frag);
+  }
+
+  function initPython() {
+    $$('.code[data-download$=".py"] pre code, .code[data-title$=".py"] pre code').forEach((codeEl) => {
+      if (!codeEl.querySelector('var')) highlightPython(codeEl);
+    });
+  }
+
+  /* =========================================================================
    * Job script builder
    * ========================================================================= */
   function renderCode(codeEl, text) {
@@ -1187,6 +1256,7 @@
       ['nav', Nav.init],
       ['progress', initProgress],
       ['flags', initFlags],
+      ['python', initPython],
       ['builder', initBuilder],
       ['cheatsearch', initCheatsearch],
       ['misc', initMisc],
