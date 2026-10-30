@@ -139,7 +139,7 @@
 
   /** Builds a job script from validated values (see validateBuilder). */
   function buildScript(v) {
-    const lines = ['#!/bin/bash'];
+    const lines = ['#!/bin/bash -l'];
     if (v.job) lines.push(directive('--job-name=' + v.job, 'Job name'));
     if (v.out) lines.push(directive('--output=' + v.out, hasJobId(v.out) ? 'Output file name with job ID' : 'Output file name'));
     if (v.err && v.err !== v.out) lines.push(directive('--error=' + v.err, hasJobId(v.err) ? 'Error file name with job ID' : 'Error file name'));

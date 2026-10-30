@@ -54,7 +54,7 @@
     })(document.documentElement);
   </script>
   <link rel="stylesheet" href="assets/css/site.css?v=20261029">
-  <script src="assets/js/main.js?v=20261029" defer></script>
+  <script src="assets/js/main.js?v=20261029b" defer></script>
 </head>
 <body>
   <!-- Icon sprite (Feather icons, MIT licence). Use with <svg class="icon"><use href="#i-name"/></svg>. -->
@@ -292,7 +292,7 @@
           </div>
           <div class="rule" id="rule-one-gpu">
             <dt><svg class="icon rule__icon" aria-hidden="true" focusable="false"><use href="#i-cpu"/></svg>One GPU at Most</dt>
-            <dd>Each job may request at most 1 GPU (<code>--gres=gpu:1</code>). The GPUs are shared, so do not request more.</dd>
+            <dd>You can run one job at a time, with at most 1 GPU (<code>--gres=gpu:1</code>) and 7 CPU cores. Further jobs wait in the queue. The GPUs are shared, so do not request more.</dd>
           </div>
           <div class="rule" id="rule-report-issues">
             <dt><svg class="icon rule__icon" aria-hidden="true" focusable="false"><use href="#i-flag"/></svg>Report Issues</dt>
@@ -404,14 +404,16 @@
           <p>There are two ways to submit a job to Slurm. With <code>srun</code> (this step), the job runs right away and its output appears in your terminal, which suits quick tests. With <code>sbatch</code> (<a href="#step-3">Step 3</a>), you submit a job script that waits in the queue and keeps running after you log out, which suits longer training.</p>
           <div class="callout callout--warn" role="note">
             <svg class="icon callout__icon" aria-hidden="true" focusable="false"><use href="#i-alert-triangle"/></svg>
-            <p><strong>Required for this step:</strong> open a shell on a compute node before you run the commands below. You don't need it for <code>sbatch</code> in <a href="#step-3">Step 3</a>.</p>
+            <p><strong>To work interactively,</strong> open a shell on a compute node first. You don't need it for <code>srun</code> below or for <code>sbatch</code> in <a href="#step-3">Step 3</a>, which you run from the login node.</p>
           </div>
 
           <h4>Open a shell on a compute node</h4>
-          <p>After you log in, you are on the login node. Run this command to open a shell on a compute node:</p>
-          <div class="code" data-where="server" data-cheat="Open a shell on a compute node" data-keywords="srun pty bash compute node interactive shell login"><pre><code>srun --pty bash -l</code></pre></div>
+          <p>After you log in, you are on the login node. Run one of these commands to open a shell on a compute node:</p>
+          <div class="code" data-where="server" data-title="CPU only" data-cheat="Open a shell on a compute node (CPU only)" data-keywords="srun pty bash compute node interactive shell login cpu"><pre><code>srun --pty bash -l</code></pre></div>
+          <div class="code" data-where="server" data-title="With 1 GPU" data-cheat="Open a shell on a compute node with 1 GPU" data-keywords="srun pty bash compute node interactive shell login gpu -G1 gpus"><pre><code>srun -G1 --pty bash -l</code></pre></div>
           <ul>
             <li><code>srun</code> asks Slurm for a place to run, <code>--pty</code> connects it to your terminal, and <code>bash -l</code> starts a login shell there, so commands like <code>module</code> work.</li>
+            <li>The first command gives you CPU resources only. <code>-G1</code> (short for <code>--gpus=1</code>) also allocates 1 GPU, so you can run <code>nvidia-smi</code> or <code>python my_script.py</code> on it directly. The GPU stays reserved for you until you <code>exit</code>, so only use it while you need it.</li>
             <li>When it is ready, your prompt shows the compute node's name instead of the login node's.</li>
             <li>If the server is busy, you may see <samp>srun: job <var>&lt;job_id&gt;</var> queued and waiting for resources</samp>. Wait, and the shell opens when there is room.</li>
           </ul>
@@ -441,7 +443,7 @@
 
           <div id="run-interactive">
             <h4>Submit the job with <code>srun</code></h4>
-            <p>From terminal,</p>
+            <p>Run this from the login node, not from inside a compute-node shell (there it waits forever):</p>
             <div class="code" data-where="server" data-cheat="Run a Python script interactively on 1 GPU" data-keywords="srun interactive gpu run"><pre><code>srun <span class="flag" data-flag="gres">--gres=gpu:1</span> <span class="flag" data-flag="time">--time=00:30:00</span> <span class="flag" data-flag="mem">--mem=500M</span> python my_script.py</code></pre></div>
             <p class="flags__intro">Information:</p>
             <dl class="flags">
@@ -449,13 +451,13 @@
               <div class="flags__item" data-flag="time"><dt><code>--time=00:30:00</code></dt><dd>Sets a 30-minute runtime limit.</dd></div>
               <div class="flags__item" data-flag="mem"><dt><code>--mem=500M</code></dt><dd>Allocates 500MB of memory.</dd></div>
             </dl>
-            <p>This will run <code>my_script.py</code> and display output directly in the terminal.</p>
+            <p>This will run <code>my_script.py</code> and display output directly in the terminal. Already in a shell opened with <code>srun -G1</code>? Just run <code>python my_script.py</code>.</p>
           </div>
 
           <h4>Leave the compute node</h4>
           <p>When you have finished working, leave the compute node so its resources are freed for others:</p>
           <div class="code" data-where="server" data-cheat="Leave the compute node" data-keywords="exit leave compute node logout"><pre><code>exit</code></pre></div>
-          <p class="tip">This shell counts as a job, so it appears in <code>squeue -u <var data-var="username">username</var></code> while it is open.</p>
+          <p class="tip">This shell counts as a job, so it appears in <code>squeue -u <var data-var="username">username</var></code> while it is open. Each user can run only one job at a time, so while it is open, jobs you submit with <code>sbatch</code> wait in the queue (<samp>QOSMaxJobsPerUserLimit</samp>) until you <code>exit</code>.</p>
           <p class="done js-only">
             <label class="check"><input type="checkbox" data-done="step-2"> <span>I've finished step 2</span></label>
           </p>
@@ -474,7 +476,7 @@
             </li>
             <li>
               <p>Add Slurm and command lines:</p>
-              <div class="code" data-where="server" data-title="my_job_script.sh" data-download="my_job_script.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+              <div class="code" data-where="server" data-title="my_job_script.sh" data-download="my_job_script.sh"><pre><code><span class="tok-comment">#!/bin/bash -l</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=my_job</span>              <span class="tok-comment"># Job name</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=output_%j.txt</span>         <span class="tok-comment"># Output file name with job ID</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--error=error_%j.txt</span>           <span class="tok-comment"># Error file name with job ID</span>
@@ -522,15 +524,15 @@ python my_script.py</code></pre></div>
           <div class="code" data-where="server" data-cheat="Follow a job's output live" data-keywords="tail follow watch live log output"><pre><code>tail -f output_<var>&lt;job_id&gt;</var>.txt</code></pre></div>
           <p>Shows new lines as your job writes them. Press <kbd>Ctrl</kbd> <kbd>C</kbd> to stop watching; the job keeps running. If nothing appears, run Python with <code>python -u</code> so it doesn't hold back its output.</p>
           <h4>See how a finished job went</h4>
-          <div class="code" data-where="server" data-cheat="Show the result of a finished job" data-keywords="sacct history state failed timeout memory finished"><pre><code>sacct -j <var>&lt;job_id&gt;</var> --format=JobID,JobName,State,Elapsed,MaxRSS</code></pre></div>
-          <p>The <strong>State</strong> column shows <code>COMPLETED</code>, <code>FAILED</code>, <code>TIMEOUT</code> (hit the time limit) or <code>OUT_OF_MEMORY</code> (increase <code>--mem</code>). <strong>MaxRSS</strong> is the most memory it used, which helps you request the right amount next time.</p>
+          <div class="code" data-where="server" data-cheat="Show the result of a finished job" data-keywords="sacct history state failed timeout memory finished"><pre><code>sacct -j <var>&lt;job_id&gt;</var> --format=JobID,JobName,State,Elapsed</code></pre></div>
+          <p>The <strong>State</strong> column shows <code>COMPLETED</code>, <code>FAILED</code> or <code>TIMEOUT</code> (hit the time limit).</p>
           <h4>Find out why a job is still waiting</h4>
           <div class="code" data-where="server" data-cheat="Show the details of a job" data-keywords="scontrol show job pending reason details"><pre><code>scontrol show job <var>&lt;job_id&gt;</var></code></pre></div>
           <p>Look at <code>Reason=</code>: <code>Resources</code> means it's waiting for a free GPU, <code>Priority</code> means other jobs are ahead of it.</p>
           <h4>Check the server and GPUs</h4>
           <div class="code" data-where="server" data-cheat="Show the state of the server's nodes" data-keywords="sinfo nodes partition idle busy"><pre><code>sinfo</code></pre></div>
           <div class="code" data-where="server" data-cheat="Show GPU usage and memory" data-keywords="nvidia-smi gpu usage memory utilization"><pre><code>nvidia-smi</code></pre></div>
-          <p><code>sinfo</code> shows whether nodes are <code>idle</code>, <code>mix</code> (partly used) or <code>alloc</code> (full). <code>nvidia-smi</code> shows each GPU's memory use and load.</p>
+          <p><code>sinfo</code> shows whether nodes are <code>idle</code>, <code>mix</code> (partly used) or <code>alloc</code> (full). <code>nvidia-smi</code> shows the GPU's memory use and load. It only works where you have a GPU: inside a shell opened with <code>srun -G1</code>, or in a job script. The login node has none.</p>
           <div class="callout callout--note" role="note">
             <svg class="icon callout__icon" aria-hidden="true" focusable="false"><use href="#i-info"/></svg>
             <p><strong>Note:</strong> Always confirm job parameters and resource requests as appropriate for your cluster's policies to avoid overloading shared resources.</p>
@@ -547,7 +549,7 @@ python my_script.py</code></pre></div>
            "<", ">" and "&" escaped as &lt; &gt; &amp;.
 
            ADMIN: Please check these assumptions before announcing the examples:
-             1. Jobs can reach the internet (MNIST, CIFAR-10 and Hugging Face models are
+             1. Jobs can reach the internet (MNIST and Hugging Face models are
                 downloaded the first time a job runs).
              2. --cpus-per-task is accepted.
              3. Home directories have room for conda environments and the Hugging Face
@@ -576,7 +578,7 @@ python my_script.py</code></pre></div>
           </a>
           <a class="method-card" href="#ex-resume">
             <span class="method-card__title">5 · Checkpoint and resume</span>
-            <span class="method-card__text">Long training that survives the time limit: resubmit and it carries on.</span>
+            <span class="method-card__text">A job that hits its time limit, then picks up where it stopped. Takes about 3 minutes.</span>
           </a>
           <a class="method-card" href="#ex-array">
             <span class="method-card__title">6 · Hyperparameter sweep</span>
@@ -613,7 +615,7 @@ if torch.cuda.is_available():
     print("Matrix multiply on the GPU: OK")
 else:
     print("No GPU visible. Did you request one with --gres=gpu:1?")</code></pre></div>
-          <div class="code" data-where="server" data-title="check_gpu.sh" data-download="check_gpu.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+          <div class="code" data-where="server" data-title="check_gpu.sh" data-download="check_gpu.sh"><pre><code><span class="tok-comment">#!/bin/bash -l</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=check_gpu</span>          <span class="tok-comment"># Job name</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=check_gpu_%j.txt</span>     <span class="tok-comment"># Output file name with job ID</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--gres=gpu:1</span>                  <span class="tok-comment"># Number of GPUs</span>
@@ -746,7 +748,7 @@ for epoch in range(1, args.epochs + 1):
 print(f"Test accuracy: {evaluate():.2f}% (lr={args.lr})")
 torch.save(model.state_dict(), args.save)
 print(f"Saved model to {args.save}")</code></pre></div>
-          <div class="code" data-where="server" data-title="train_mnist.sh" data-download="train_mnist.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+          <div class="code" data-where="server" data-title="train_mnist.sh" data-download="train_mnist.sh"><pre><code><span class="tok-comment">#!/bin/bash -l</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=mnist</span>              <span class="tok-comment"># Job name</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=output_%j.txt</span>        <span class="tok-comment"># Output file name with job ID</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--error=error_%j.txt</span>          <span class="tok-comment"># Error file name with job ID</span>
@@ -822,7 +824,7 @@ loss, acc = model.evaluate(x_test, y_test, verbose=0)
 print(f"Test accuracy: {100 * acc:.2f}%")
 model.save("mnist_cnn.keras")
 print("Saved model to mnist_cnn.keras")</code></pre></div>
-          <div class="code" data-where="server" data-title="train_mnist_tf.sh" data-download="train_mnist_tf.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+          <div class="code" data-where="server" data-title="train_mnist_tf.sh" data-download="train_mnist_tf.sh"><pre><code><span class="tok-comment">#!/bin/bash -l</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=mnist_tf</span>           <span class="tok-comment"># Job name</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=output_%j.txt</span>        <span class="tok-comment"># Output file name with job ID</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--error=error_%j.txt</span>          <span class="tok-comment"># Error file name with job ID</span>
@@ -840,38 +842,40 @@ python -u train_mnist_tf.py</code></pre></div>
         </section>
 
         <section id="ex-resume" class="method" data-label="Example 5" aria-labelledby="ex-resume-title">
-          <h3 id="ex-resume-title">Example 5: Checkpoint and resume long training</h3>
-          <p>Every job has a time limit, and maintenance or errors can stop a job early. Save a checkpoint regularly and your script can pick up where it stopped instead of starting over. This example trains ResNet-18 on CIFAR-10 for 30 epochs, which may not fit in one 1-hour job.</p>
-          <div class="code" data-where="server" data-title="train_resume.py" data-download="train_resume.py"><pre><code>"""Train ResNet-18 on CIFAR-10 and save a checkpoint after every epoch.
+          <h3 id="ex-resume-title">Example 5: Checkpoint and resume training</h3>
+          <p>Every job has a time limit, and maintenance or errors can stop a job early. Save a checkpoint regularly and your script can pick up where it stopped instead of starting over. To show this in a few minutes, this example trains the MNIST network from <a href="#ex-pytorch">Example 3</a> for 30 epochs with a deliberately short 1-minute time limit, so the first job runs out of time partway through.</p>
+          <div class="code" data-where="server" data-title="train_resume.py" data-download="train_resume.py"><pre><code>"""Train a small CNN on MNIST and save a checkpoint after every epoch.
 If the job runs out of time, submit it again and it carries on where it stopped."""
 import argparse
 import os
 import time
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from torchvision import datasets, models, transforms
+from torchvision import datasets, transforms
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--epochs", type=int, default=30)
-parser.add_argument("--checkpoint", default="checkpoint.pt")
+parser.add_argument("--checkpoint", default="mnist_checkpoint.pt")
 args = parser.parse_args()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-norm = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2470, 0.2435, 0.2616))
-train_tf = transforms.Compose([transforms.RandomCrop(32, padding=4), transforms.RandomHorizontalFlip(),
-                               transforms.ToTensor(), norm])
-test_tf = transforms.Compose([transforms.ToTensor(), norm])
-train_set = datasets.CIFAR10("data", train=True, download=True, transform=train_tf)
-test_set = datasets.CIFAR10("data", train=False, download=True, transform=test_tf)
+<span class="tok-comment"># Reuses ./data from Example 3, or downloads MNIST (about 12 MB) the first time</span>
+transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
+train_set = datasets.MNIST("data", train=True, download=True, transform=transform)
+test_set = datasets.MNIST("data", train=False, download=True, transform=transform)
 train_loader = DataLoader(train_set, batch_size=128, shuffle=True, num_workers=4, pin_memory=True)
 test_loader = DataLoader(test_set, batch_size=1000, num_workers=4)
 
-model = models.resnet18(num_classes=10).to(device)
-optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs)
+model = nn.Sequential(
+    nn.Conv2d(1, 32, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
+    nn.Conv2d(32, 64, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
+    nn.Flatten(), nn.Linear(64 * 7 * 7, 128), nn.ReLU(), nn.Linear(128, 10),
+).to(device)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
 <span class="tok-comment"># Resume if a checkpoint from an earlier job exists</span>
 start_epoch = 1
@@ -879,7 +883,6 @@ if os.path.exists(args.checkpoint):
     ckpt = torch.load(args.checkpoint, map_location=device)
     model.load_state_dict(ckpt["model"])
     optimizer.load_state_dict(ckpt["optimizer"])
-    scheduler.load_state_dict(ckpt["scheduler"])
     start_epoch = ckpt["epoch"] + 1
     print(f"Resumed from {args.checkpoint}, continuing at epoch {start_epoch}")
 
@@ -902,45 +905,49 @@ for epoch in range(start_epoch, args.epochs + 1):
         optimizer.zero_grad()
         F.cross_entropy(model(images), labels).backward()
         optimizer.step()
-    scheduler.step()
 
     <span class="tok-comment"># Save to a temporary file first, so a job stopped mid-save never leaves a broken checkpoint</span>
-    state = {"model": model.state_dict(), "optimizer": optimizer.state_dict(),
-             "scheduler": scheduler.state_dict(), "epoch": epoch}
+    state = {"model": model.state_dict(), "optimizer": optimizer.state_dict(), "epoch": epoch}
     torch.save(state, args.checkpoint + ".tmp")
     os.replace(args.checkpoint + ".tmp", args.checkpoint)
     print(f"Epoch {epoch}/{args.epochs}: test accuracy {evaluate():.2f}%, "
           f"{time.time() - start:.1f}s, checkpoint saved")
 
 print("Training complete.")</code></pre></div>
-          <div class="code" data-where="server" data-title="train_resume.sh" data-download="train_resume.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
-<span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=cifar_resume</span>       <span class="tok-comment"># Job name</span>
+          <div class="code" data-where="server" data-title="train_resume.sh" data-download="train_resume.sh"><pre><code><span class="tok-comment">#!/bin/bash -l</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=mnist_resume</span>       <span class="tok-comment"># Job name</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=output_%j.txt</span>        <span class="tok-comment"># Output file name with job ID</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--error=error_%j.txt</span>          <span class="tok-comment"># Error file name with job ID</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--gres=gpu:1</span>                  <span class="tok-comment"># Number of GPUs</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--cpus-per-task=4</span>             <span class="tok-comment"># CPU cores for loading data</span>
-<span class="tok-key">#SBATCH</span> <span class="tok-flag">--mem=8G</span>                      <span class="tok-comment"># Memory (8 GB)</span>
-<span class="tok-key">#SBATCH</span> <span class="tok-flag">--time=01:00:00</span>               <span class="tok-comment"># Time limit (1 h)</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--mem=4G</span>                      <span class="tok-comment"># Memory (4 GB)</span>
+<span class="tok-key">#SBATCH</span> <span class="tok-flag">--time=00:01:00</span>               <span class="tok-comment"># Time limit (1 min, short on purpose)</span>
 
 <span class="tok-comment"># Load necessary modules</span>
 module load anaconda
 
 python -u train_resume.py --epochs 30</code></pre></div>
-          <div class="code" data-where="server" data-cheat="Run the checkpoint and resume example" data-keywords="example checkpoint resume cifar resnet long"><pre><code>sbatch train_resume.sh</code></pre></div>
-          <p>If the time limit is reached before epoch 30, Slurm stops the job. Check what happened:</p>
+          <div class="code" data-where="server" data-cheat="Run the checkpoint and resume example" data-keywords="example checkpoint resume mnist time limit timeout"><pre><code>sbatch train_resume.sh</code></pre></div>
+          <p>After about a minute, Slurm stops the job before epoch 30. Check what happened:</p>
           <div class="code" data-where="server"><pre><code>sacct -j <var>&lt;job_id&gt;</var> --format=JobID,JobName,State,Elapsed</code></pre></div>
-          <p>A <samp>TIMEOUT</samp> state means it ran out of time. Submit the same script again; it finds <code>checkpoint.pt</code> and continues:</p>
-          <div class="code" data-where="server" data-title="Example output (second job)" data-copy="false"><pre><code>Resumed from checkpoint.pt, continuing at epoch 19
-Epoch 19/30: test accuracy 86.41%, 98.3s, checkpoint saved
-…</code></pre></div>
-          <p class="tip">To start again from scratch, delete the checkpoint first: <code>rm checkpoint.pt</code>.</p>
+          <p>A <samp>TIMEOUT</samp> state means it ran out of time, and <code>error_<var>&lt;job_id&gt;</var>.txt</code> says <samp>CANCELLED … DUE TO TIME LIMIT</samp>. Submit the same script again; it finds <code>mnist_checkpoint.pt</code> and continues:</p>
+          <div class="code" data-where="server" data-title="Example output (second job)" data-copy="false"><pre><code>Resumed from mnist_checkpoint.pt, continuing at epoch 26
+Epoch 26/30: test accuracy 99.20%, 3.3s, checkpoint saved
+…
+Epoch 30/30: test accuracy 99.18%, 3.3s, checkpoint saved
+Training complete.</code></pre></div>
+          <ul class="tips">
+            <li>How many epochs fit in a minute depends on the GPU. If the second job also times out, submit it again; each run carries on from the last saved epoch.</li>
+            <li>For real training, set <code>--time</code> to a few hours and use the same pattern: save every epoch (or every N minutes) and resubmit until it finishes.</li>
+            <li>To start again from scratch, delete the checkpoint first: <code>rm mnist_checkpoint.pt</code>.</li>
+          </ul>
         </section>
 
         <section id="ex-array" class="method" data-label="Example 6" aria-labelledby="ex-array-title">
           <h3 id="ex-array-title">Example 6: Hyperparameter sweep with a job array</h3>
           <p>A job array submits several copies of one job script with a single <code>sbatch</code>. Each copy (a <em>task</em>) gets its own number in <code>$SLURM_ARRAY_TASK_ID</code>, which the script uses to pick a different setting. This one trains the model from Example 3 with four learning rates.</p>
           <p>Put <code>sweep.sh</code> in the same folder as <code>train_mnist.py</code> from Example 3:</p>
-          <div class="code" data-where="server" data-title="sweep.sh" data-download="sweep.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+          <div class="code" data-where="server" data-title="sweep.sh" data-download="sweep.sh"><pre><code><span class="tok-comment">#!/bin/bash -l</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=lr_sweep</span>           <span class="tok-comment"># Job name</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=sweep_%A_%a.txt</span>      <span class="tok-comment"># %A = array job ID, %a = task number</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--array=0-3%1</span>                 <span class="tok-comment"># Tasks 0 to 3, one at a time (1 GPU)</span>
@@ -1003,7 +1010,7 @@ for question in questions:
     print("Q:", question)
     print("A:", result[0]["generated_text"][-1]["content"])
     print("-" * 60)</code></pre></div>
-          <div class="code" data-where="server" data-title="hf_generate.sh" data-download="hf_generate.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+          <div class="code" data-where="server" data-title="hf_generate.sh" data-download="hf_generate.sh"><pre><code><span class="tok-comment">#!/bin/bash -l</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=hf_generate</span>        <span class="tok-comment"># Job name</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=output_%j.txt</span>        <span class="tok-comment"># Output file name with job ID</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--error=error_%j.txt</span>          <span class="tok-comment"># Error file name with job ID</span>
@@ -1072,7 +1079,7 @@ print("Final evaluation:", trainer.evaluate())
 trainer.save_model("distilbert-imdb")
 tokenizer.save_pretrained("distilbert-imdb")
 print("Saved the fine-tuned model to distilbert-imdb/")</code></pre></div>
-          <div class="code" data-where="server" data-title="hf_finetune.sh" data-download="hf_finetune.sh"><pre><code><span class="tok-comment">#!/bin/bash</span>
+          <div class="code" data-where="server" data-title="hf_finetune.sh" data-download="hf_finetune.sh"><pre><code><span class="tok-comment">#!/bin/bash -l</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--job-name=hf_finetune</span>        <span class="tok-comment"># Job name</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--output=output_%j.txt</span>        <span class="tok-comment"># Output file name with job ID</span>
 <span class="tok-key">#SBATCH</span> <span class="tok-flag">--error=error_%j.txt</span>          <span class="tok-comment"># Error file name with job ID</span>
@@ -1190,7 +1197,7 @@ python -u hf_finetune.py</code></pre></div>
               <div id="b-script-block" class="code" data-where="server" data-title="my_job_script.sh" data-download="my_job_script.sh"><pre><code id="b-script"></code></pre></div>
               <p id="builder-status" class="builder__status" role="status"></p>
               <h3 class="builder__heading">Or run it interactively</h3>
-              <p class="builder__sub">The same resources with <code>srun</code>. The output appears in your terminal.</p>
+              <p class="builder__sub">The same resources with <code>srun</code>. Run it from the login node; the output appears in your terminal.</p>
               <div id="b-srun-block" class="code" data-where="server"><pre><code id="b-srun"></code></pre></div>
               <h3 class="builder__heading">Next steps</h3>
               <ol class="next-steps">

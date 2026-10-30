@@ -110,11 +110,19 @@ There are two ways to submit a job to Slurm. With `srun` (this step), the job ru
 
 #### Open a Shell on a Compute Node
 
-1. After logging in you are on the login node. Open a shell on a compute node:
+1. After logging in you are on the login node. Open a shell on a compute node with one of these commands:
 
-		srun --pty bash -l
+   - CPU only:
+
+			srun --pty bash -l
+
+   - With 1 GPU:
+
+			srun -G1 --pty bash -l
 
    - `--pty` connects the session to your terminal, and `bash -l` starts a login shell so commands like `module` work.
+
+   - The first command gives you CPU resources only. `-G1` (short for `--gpus=1`) also allocates 1 GPU, so you can run `nvidia-smi` or `python my_script.py` on it directly. The GPU stays reserved for you until you `exit`, so only use it while you need it.
 
    - Your prompt changes to show the compute node's name. If the server is busy, wait until the shell opens.
 
@@ -273,7 +281,7 @@ Complete example scripts, each with a Python script and a Slurm job script you c
 
 4. The same model with TensorFlow / Keras.
 
-5. Checkpoint and resume long training that runs past the time limit.
+5. Checkpoint and resume: a short MNIST job that hits a 1-minute time limit, then continues from its checkpoint when resubmitted.
 
 6. Hyperparameter sweep with a Slurm job array (`#SBATCH --array=0-3%1`, one task at a time).
 
